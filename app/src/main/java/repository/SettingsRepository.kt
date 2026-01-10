@@ -8,8 +8,10 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 private val Context.userDataStore: DataStore<Preferences> by preferencesDataStore(name = "user_prefs")
+
 class SettingsRepository(private val dataStore: DataStore<Preferences>) {
 
     private companion object{
@@ -17,25 +19,42 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val SESSION_ID = stringPreferencesKey("session_id")
     }
 
-    suspend fun  getSessionId(): String?{
-        val prefs = dataStore.data.first()
-        return prefs[SESSION_ID]
-    }
-
-    suspend fun  getUserId(): Int?{
-        val  prefs = dataStore.data.first()
-        return  prefs[USER_ID]
-    }
-
-    suspend fun saveUserIsSessionId( userId: Int, sessionId: String){
-        dataStore.edit { prefs ->
-            prefs[USER_ID] = userId
-            prefs[SESSION_ID] = sessionId
+    suspend fun getSessionId(): String? {
+        return try {
+            dataStore.data.map { prefs ->
+                prefs[SESSION_ID]
+            }.first()
+        } catch (e: Exception) {
+            null
         }
     }
 
-    suspend fun isLogged(): Boolean{
-        return getUserId() != null
+    suspend fun getUserId(): Int? {
+        return try {
+            dataStore.data.map { prefs ->
+                prefs[USER_ID]
+            }.first()
+        } catch (e: Exception) {
+            null
+        }
     }
 
+    suspend fun saveUserIsSessionId(userId: Int, sessionId: String) {
+        try {
+            dataStore.edit { prefs ->
+                prefs[USER_ID] = userId
+                prefs[SESSION_ID] = sessionId
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    suspend fun isLogged(): Boolean {
+        return try {
+            getUserId() != null
+        } catch (e: Exception) {
+            false
+        }
+    }
 }

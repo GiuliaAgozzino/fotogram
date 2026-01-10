@@ -9,8 +9,10 @@ import kotlinx.coroutines.launch
 import repository.SettingsRepository
 
 class AppViewModel(
-private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository
 ) : ViewModel() {
+
+    // Inizia come null per indicare che stiamo ancora caricando
     var isLoggedIn by mutableStateOf<Boolean?>(null)
         private set
 
@@ -18,9 +20,18 @@ private val settingsRepository: SettingsRepository
         checkLoginStatus()
     }
 
-    private fun checkLoginStatus(){
+    private fun checkLoginStatus() {
         viewModelScope.launch {
-            isLoggedIn = settingsRepository.isLogged()
+            try {
+                isLoggedIn = settingsRepository.isLogged()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                isLoggedIn = false // In caso di errore, considera non loggato
+            }
         }
+    }
+
+    fun setLoggedIn(value: Boolean) {
+        isLoggedIn = value
     }
 }
