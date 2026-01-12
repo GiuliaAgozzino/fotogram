@@ -1,5 +1,6 @@
 package view
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -8,30 +9,21 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.datastore.preferences.preferencesDataStore
-import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.fotogram.ui.theme.FotogramTheme
 import repository.ApiRepository
 import repository.SettingsRepository
 import viewModel.AppViewModel
 import viewModel.AuthViewModel
-import viewModel.FeedViewModel
-import viewModel.MainScreenViewModel
-import viewModel.ViewModelFactory
+import viewModel.AuthViewModelFactory
+import viewModel.UserViewModelFactory
 
-
-
-private val android.content.Context.userDataStore by preferencesDataStore(name = "user_prefs")
+private val Context.userDataStore by preferencesDataStore(name = "user_prefs")
 
 class MainActivity : ComponentActivity() {
-
-    private lateinit var appViewModel: AppViewModel
-    private lateinit var authViewModel: AuthViewModel
-    private lateinit var mainScreenViewModel: MainScreenViewModel
-    private lateinit var feedViewModel: FeedViewModel
 
     private lateinit var apiRepository: ApiRepository
 
@@ -41,22 +33,18 @@ class MainActivity : ComponentActivity() {
         val settingsRepository = SettingsRepository(applicationContext.userDataStore)
         apiRepository = ApiRepository()
 
-        val factory = ViewModelFactory(settingsRepository, apiRepository)
-
-        appViewModel = ViewModelProvider(this, factory)[AppViewModel::class.java]
-        authViewModel = ViewModelProvider(this, factory)[AuthViewModel::class.java]
-        mainScreenViewModel = ViewModelProvider(this, factory)[MainScreenViewModel::class.java]
-        feedViewModel = ViewModelProvider(this, factory)[FeedViewModel::class.java]
+        val authFactory = AuthViewModelFactory(settingsRepository, apiRepository)
 
         enableEdgeToEdge()
 
         setContent {
             FotogramTheme {
+                val appViewModel: AppViewModel = viewModel(factory = authFactory)
+
                 App(
                     appViewModel = appViewModel,
-                    authViewModel = authViewModel,
-                    mainScreenViewModel = mainScreenViewModel,
-                    feedViewModel = feedViewModel
+                    authFactory = authFactory,
+                    apiRepository = apiRepository
                 )
             }
         }
@@ -73,9 +61,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun App(
     appViewModel: AppViewModel,
-    authViewModel: AuthViewModel,
-    mainScreenViewModel: MainScreenViewModel,
-    feedViewModel: FeedViewModel
+    authFactory: AuthViewModelFactory,
+    apiRepository: ApiRepository
 ) {
     when (appViewModel.isLoggedIn) {
         null -> {
@@ -86,7 +73,10 @@ fun App(
                 CircularProgressIndicator()
             }
         }
+
         false -> {
+            val authViewModel: AuthViewModel = viewModel(factory = authFactory)
+
             SignInScreen(
                 viewModel = authViewModel,
                 onRegistrationSuccess = {
@@ -94,12 +84,17 @@ fun App(
                 }
             )
         }
+
         true -> {
-            MainScreen(
-                viewModel = mainScreenViewModel,
-                feedViewModel = feedViewModel,
+            // Crea UserViewModelFactory solo quando hai userId e sessionId
+            val userFactory = UserViewModelFactory(
                 userId = appViewModel.userId,
-                sessionId = appViewModel.sessionId
+                sessionId = appViewModel.sessionId,
+                apiRepository = apiRepository
+            )
+
+            MainScreen(
+                userFactory = userFactory,
             )
         }
     }

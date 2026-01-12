@@ -1,34 +1,29 @@
 package viewModel
 
 import android.util.Log
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import repository.ApiRepository
 import repository.SettingsRepository
 
+
+
 class FeedViewModel(
-    private val settingsRepository: SettingsRepository,
+    val userId: Int?,
+    val sessionId: String?,
     private val apiRepository: ApiRepository
 ) : ViewModel() {
 
-    var sessionId = mutableStateOf<String?>(null)
-        private set
-    var userId = mutableStateOf<Int?>(null)
+
+    var userIdState by mutableStateOf(userId)
         private set
 
-    init {
-        loadUserData()
-    }
+    var sessionIdState by mutableStateOf(sessionId)
+        private set
 
-    // Rendi pubblica così può essere richiamata
-    fun loadUserData() {
-        Log.d("FeedViewModel", "loadUserData() chiamato")
-        viewModelScope.launch {
-            sessionId.value = settingsRepository.getSessionId()
-            userId.value = settingsRepository.getUserId()
-            Log.d("FeedViewModel", "Dati caricati: userId=${userId.value}, sessionId=${sessionId.value}")
-        }
-    }
+
 }

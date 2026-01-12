@@ -1,6 +1,7 @@
 package model
 
 
+import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.Serializable
 
 
@@ -11,10 +12,11 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class UpdateUserRequest(
     val username: String,
+    @EncodeDefault
     val bio: String? = null,
+    @EncodeDefault
     val dateOfBirth: String? = null
 )
-
 // PUT /user/image - Aggiorna immagine profilo
 @Serializable
 data class UpdateImageRequest(
@@ -45,7 +47,7 @@ data class UserResponse(
     val isYourFollowing: Boolean = false,
     val followersCount: Int = 0,
     val followingCount: Int = 0,
-    val postsCount: Int = 0
+    val postCount: Int = 0
 )
 
 // Errore generico

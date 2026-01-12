@@ -1,28 +1,29 @@
 package view
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import viewModel.FeedViewModel
 
 @Composable
-fun FeedScreen(modifier: Modifier, viewModel: FeedViewModel, userId: Int?, sessionId: String? ) {
+fun FeedScreen(modifier: Modifier, feedViewModel: FeedViewModel) {
 
-    Box(
+    Column(
         modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        TextField(
-            value = "",
-            onValueChange = { /* gestisci input */ },
-            label = { Text("FeedScreen ${userId}, ${sessionId}") }, // opzionale, se vuoi un'etichetta sopra
-            modifier = modifier.fillMaxWidth(0.8f)
-        )
+        Text(text = "Feed Screen")
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(text = "User ID: ${feedViewModel.userId ?: "N/A"}")
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(text = "Session ID: ${feedViewModel.sessionId ?: "N/A"}")
     }
 }

@@ -5,25 +5,28 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import viewModel.FeedViewModel
 import viewModel.MainScreenViewModel
 import viewModel.MainTab
+import viewModel.UserProfileViewModel
+import viewModel.UserViewModelFactory
 
 @Composable
 fun MainScreen(
-    viewModel: MainScreenViewModel,
-    feedViewModel: FeedViewModel,
-    userId: Int?,
-    sessionId: String?
+    userFactory: UserViewModelFactory
 ) {
-    val currentTab by viewModel.currentTab
-
+    val mainScreenViewModel: MainScreenViewModel = viewModel()
+    val currentTab by mainScreenViewModel.currentTab
+    val feedViewModel: FeedViewModel = viewModel(factory = userFactory)
+    val userProfileViewModel: UserProfileViewModel = viewModel (factory = userFactory)
     Scaffold(
         bottomBar = {
             if (currentTab != MainTab.CREATEPOST) {
                 NavBar(
-                    currentTab = viewModel.currentTab.value,
-                    onNavigate = { tab -> viewModel.changeTab(tab) }
+                    currentTab = mainScreenViewModel.currentTab.value,
+                    onNavigate = { tab -> mainScreenViewModel.changeTab(tab) }
                 )
             }
         }
@@ -31,20 +34,16 @@ fun MainScreen(
         when (currentTab) {
             MainTab.FEED -> FeedScreen(
                 modifier = Modifier.padding(innerPadding),
-                viewModel = feedViewModel,
-                userId = userId,
-                sessionId = sessionId
+                feedViewModel= feedViewModel
             )
             MainTab.CREATEPOST -> CreatePostScreen(
                 modifier = Modifier.padding(innerPadding),
-                onBackToFeed = { viewModel.changeTab(MainTab.FEED) },
+                onBackToFeed = { mainScreenViewModel.changeTab(MainTab.FEED) },
 
             )
             MainTab.USERPROFILE -> UserProfileScreen(
                 modifier = Modifier.padding(innerPadding),
-                userId = userId,
-                sessionId = sessionId
-
+                userProfileViewModel = userProfileViewModel
             )
         }
     }

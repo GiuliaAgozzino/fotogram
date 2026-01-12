@@ -13,9 +13,7 @@ enum class MainTab {
     CREATEPOST,
     USERPROFILE
 }
-class MainScreenViewModel(
-    private val settingsRepository: SettingsRepository,
-) : ViewModel() {
+class MainScreenViewModel() : ViewModel() {
 
     // Tab corrente
     var currentTab = mutableStateOf(MainTab.FEED)

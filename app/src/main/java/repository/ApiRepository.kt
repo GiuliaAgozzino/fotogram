@@ -24,17 +24,15 @@ import io.ktor.client.request.put
 
 class ApiRepository {
 
-    // Base URL del server
     private val baseUrl = "https://develop.ewlab.di.unimi.it/mc/2526"
 
-    // Creazione dell'HTTP Client (come slide 15 del prof)
     private val httpClient: HttpClient by lazy {
         HttpClient(OkHttp) {
             install(ContentNegotiation) {
                 json(
                     Json {
                         ignoreUnknownKeys = true
-                        coerceInputValues = true // Gestisce i null nei campi con default
+                        coerceInputValues = true
                     }
                 )
             }
@@ -43,8 +41,6 @@ class ApiRepository {
 
     /**
      * STEP 1: Crea un nuovo utente
-     * POST /user (senza body)
-     * Ritorna: userId e sessionId
      */
     private suspend fun createUser(): Result<CreateUserResponse> {
         return try {
@@ -74,21 +70,23 @@ class ApiRepository {
     /**
      * STEP 2: Aggiorna le informazioni dell'utente (username, bio, dateOfBirth)
      * PUT /user
-     * Richiede: sessionId nell'header "x-session-id"
+     * Ora accetta anche bio e dateOfBirth
      */
     private suspend fun updateUserInfo(
         sessionId: String,
-        username: String
+        username: String,
+        bio: String? = null,
+        dateOfBirth: String? = null
     ): Result<UserResponse> {
         return try {
             val urlString = "$baseUrl/user"
 
-            Log.d("ApiRepository", "Step 2: Updating user info...")
+            Log.d("ApiRepository", "Updating user info...")
 
             val requestBody = UpdateUserRequest(
                 username = username,
-                bio = null,
-                dateOfBirth = null
+                bio = bio,
+                dateOfBirth = dateOfBirth
             )
 
             val response: HttpResponse = httpClient.put(urlString) {
@@ -114,8 +112,6 @@ class ApiRepository {
 
     /**
      * STEP 3: Aggiorna l'immagine profilo
-     * PUT /user/image
-     * Richiede: sessionId nell'header "x-session-id"
      */
     private suspend fun updateUserImage(
         sessionId: String,
@@ -124,7 +120,7 @@ class ApiRepository {
         return try {
             val urlString = "$baseUrl/user/image"
 
-            Log.d("ApiRepository", "Step 3: Updating profile image...")
+            Log.d("ApiRepository", "Updating profile image...")
 
             val requestBody = UpdateImageRequest(
                 base64 = base64Image
@@ -153,9 +149,6 @@ class ApiRepository {
 
     /**
      * REGISTRAZIONE COMPLETA (3 step in sequenza)
-     * 1. Crea utente → ottieni userId e sessionId
-     * 2. Aggiorna username
-     * 3. Aggiorna immagine profilo
      */
     suspend fun register(username: String, pictureBase64: String): Result<CreateUserResponse> {
         // Step 1: Crea utente
@@ -168,27 +161,73 @@ class ApiRepository {
         val sessionId = userInfo.sessionId
         val userId = userInfo.userId
 
-        // Step 2: Aggiorna username
+        // Step 2: Aggiorna username (senza bio e dateOfBirth in registrazione)
         val updateInfoResult = updateUserInfo(sessionId, username)
         if (updateInfoResult.isFailure) {
             Log.e("Auth-ApiRepository", "Failed to update username, but user was created")
-            // Anche se fallisce, abbiamo comunque userId e sessionId
         }
 
         // Step 3: Aggiorna immagine
         val updateImageResult = updateUserImage(sessionId, pictureBase64)
         if (updateImageResult.isFailure) {
             Log.e("Auth-ApiRepository", "Failed to update image, but user was created")
-            // Anche se fallisce, abbiamo comunque userId e sessionId
         }
 
         Log.d("Auth-ApiRepository", "Registration completed! userId=$userId")
         return Result.success(userInfo)
     }
 
+    /**
+     * AGGIORNA PROFILO COMPLETO
+     * Metodo pubblico che combina updateUserInfo e updateUserImage
+     */
+    suspend fun updateProfile(
+        sessionId: String?,
+        username: String,
+        bio: String?,
+        dateOfBirth: String?,
+        newPicture: String?
+    ): Result<UserResponse> {
+        if (sessionId == null) {
+            return Result.failure(Exception("Session ID mancante"))
+        }
+
+        return try {
+            // Step 1: Aggiorna info utente (nome, bio, data di nascita)
+            val userResult = updateUserInfo(
+                sessionId = sessionId,
+                username = username,
+                bio = bio,
+                dateOfBirth = dateOfBirth
+            )
+
+            if (userResult.isFailure) {
+                return userResult
+            }
+
+            // Step 2: Se c'è una nuova immagine, aggiornala
+            if (newPicture != null) {
+                val imageResult = updateUserImage(sessionId, newPicture)
+                if (imageResult.isFailure) {
+                    return imageResult
+                }
+                return imageResult
+            }
+
+            return userResult
+
+        } catch (e: Exception) {
+            Log.e("ApiRepository", "Error updating profile: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Ottieni info utente
+     */
     suspend fun getUserInfo(
-        sessionId: String,
-        userId: Int
+        sessionId: String?,
+        userId: Int?
     ): Result<UserResponse> {
         return try {
             val urlString = "$baseUrl/user/$userId"
@@ -212,9 +251,7 @@ class ApiRepository {
             Result.failure(e)
         }
     }
-    /**
-     * Chiude l'HTTP client quando non serve più
-     */
+
     fun close() {
         httpClient.close()
     }
