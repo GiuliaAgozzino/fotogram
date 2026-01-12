@@ -4,11 +4,8 @@ package model
 import kotlinx.serialization.Serializable
 
 
-// ============================================
 // REQUEST MODELS (dati da inviare al server)
-// ============================================
 
-// POST /user - Non richiede body (crea utente vuoto)
 
 // PUT /user - Aggiorna info utente
 @Serializable
@@ -24,9 +21,9 @@ data class UpdateImageRequest(
     val base64: String
 )
 
-// ============================================
+
 // RESPONSE MODELS (dati ricevuti dal server)
-// ============================================
+
 
 // POST /user - Risposta creazione utente
 @Serializable

@@ -12,8 +12,13 @@ class AppViewModel(
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
-    // Inizia come null per indicare che stiamo ancora caricando
     var isLoggedIn by mutableStateOf<Boolean?>(null)
+        private set
+
+    var userId by mutableStateOf<Int?>(null)
+        private set
+
+    var sessionId by mutableStateOf<String?>(null)
         private set
 
     init {
@@ -23,15 +28,28 @@ class AppViewModel(
     private fun checkLoginStatus() {
         viewModelScope.launch {
             try {
-                isLoggedIn = settingsRepository.isLogged()
+                val logged = settingsRepository.getUserId() != null
+                if (logged) {
+                    userId = settingsRepository.getUserId()
+                    sessionId = settingsRepository.getSessionId()
+                }
+                isLoggedIn = logged
             } catch (e: Exception) {
                 e.printStackTrace()
-                isLoggedIn = false // In caso di errore, considera non loggato
+                isLoggedIn = false
             }
         }
     }
 
     fun setLoggedIn(value: Boolean) {
-        isLoggedIn = value
+        if (value) {
+            viewModelScope.launch {
+                userId = settingsRepository.getUserId()
+                sessionId = settingsRepository.getSessionId()
+                isLoggedIn = true
+            }
+        } else {
+            isLoggedIn = false
+        }
     }
 }

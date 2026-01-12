@@ -6,6 +6,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
@@ -49,7 +50,7 @@ class ApiRepository {
         return try {
             val urlString = "$baseUrl/user"
 
-            Log.d("ApiRepository", "Step 1: Creating user...")
+            Log.d("Auth-ApiRepository", "Step 1: Creating user...")
 
             val response: HttpResponse = httpClient.post(urlString) {
                 contentType(ContentType.Application.Json)
@@ -57,15 +58,15 @@ class ApiRepository {
 
             if (response.status.value == 200) {
                 val body: CreateUserResponse = response.body()
-                Log.d("ApiRepository", "User created! userId=${body.userId}, sessionId=${body.sessionId}")
+                Log.d("Auth-ApiRepository", "User created! userId=${body.userId}, sessionId=${body.sessionId}")
                 Result.success(body)
             } else {
-                Log.e("ApiRepository", "Error creating user: ${response.status.value}")
+                Log.e("Auth-ApiRepository", "Error creating user: ${response.status.value}")
                 Result.failure(Exception("Error creating user: ${response.status.value}"))
             }
 
         } catch (e: Exception) {
-            Log.e("ApiRepository", "Network error creating user: ${e.message}", e)
+            Log.e("Auth-ApiRepository", "Network error creating user: ${e.message}", e)
             Result.failure(e)
         }
     }
@@ -170,21 +171,47 @@ class ApiRepository {
         // Step 2: Aggiorna username
         val updateInfoResult = updateUserInfo(sessionId, username)
         if (updateInfoResult.isFailure) {
-            Log.e("ApiRepository", "Failed to update username, but user was created")
+            Log.e("Auth-ApiRepository", "Failed to update username, but user was created")
             // Anche se fallisce, abbiamo comunque userId e sessionId
         }
 
         // Step 3: Aggiorna immagine
         val updateImageResult = updateUserImage(sessionId, pictureBase64)
         if (updateImageResult.isFailure) {
-            Log.e("ApiRepository", "Failed to update image, but user was created")
+            Log.e("Auth-ApiRepository", "Failed to update image, but user was created")
             // Anche se fallisce, abbiamo comunque userId e sessionId
         }
 
-        Log.d("ApiRepository", "Registration completed! userId=$userId")
+        Log.d("Auth-ApiRepository", "Registration completed! userId=$userId")
         return Result.success(userInfo)
     }
 
+    suspend fun getUserInfo(
+        sessionId: String,
+        userId: Int
+    ): Result<UserResponse> {
+        return try {
+            val urlString = "$baseUrl/user/$userId"
+
+            val response: HttpResponse = httpClient.get(urlString) {
+                contentType(ContentType.Application.Json)
+                header("x-session-id", sessionId)
+            }
+
+            if (response.status.value == 200) {
+                val body: UserResponse = response.body()
+                Log.d("ApiRepository", "Success retrieving user info: ${response.status.value}")
+                Result.success(body)
+            } else {
+                Log.e("ApiRepository", "Error retrieving user info: ${response.status.value}")
+                Result.failure(Exception("Error retrieving user info: ${response.status.value}"))
+            }
+
+        } catch (e: Exception) {
+            Log.e("ApiRepository", "Network error: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
     /**
      * Chiude l'HTTP client quando non serve più
      */

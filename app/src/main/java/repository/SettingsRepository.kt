@@ -1,6 +1,7 @@
 package repository
 
 import android.content.Context
+import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -39,14 +40,17 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         }
     }
 
+    // In SettingsRepository.kt
     suspend fun saveUserIsSessionId(userId: Int, sessionId: String) {
+        Log.d("SettingsRepo", "saveUserIsSessionId chiamato con userId=$userId")
         try {
             dataStore.edit { prefs ->
                 prefs[USER_ID] = userId
                 prefs[SESSION_ID] = sessionId
             }
+            Log.d("SettingsRepo", "Salvataggio completato!")
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("SettingsRepo", "Errore salvataggio", e)
         }
     }
 

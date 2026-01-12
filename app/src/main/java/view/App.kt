@@ -8,31 +8,45 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.datastore.preferences.preferencesDataStore
+import androidx.lifecycle.ViewModelProvider
 import com.example.fotogram.ui.theme.FotogramTheme
+import repository.ApiRepository
 import repository.SettingsRepository
 import viewModel.AppViewModel
 import viewModel.AuthViewModel
-import repository.ApiRepository
+import viewModel.FeedViewModel
+import viewModel.MainScreenViewModel
+import viewModel.ViewModelFactory
+
 
 
 private val android.content.Context.userDataStore by preferencesDataStore(name = "user_prefs")
 
 class MainActivity : ComponentActivity() {
+
+    private lateinit var appViewModel: AppViewModel
+    private lateinit var authViewModel: AuthViewModel
+    private lateinit var mainScreenViewModel: MainScreenViewModel
+    private lateinit var feedViewModel: FeedViewModel
+
+    private lateinit var apiRepository: ApiRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val userDataStore = applicationContext.userDataStore
+        val settingsRepository = SettingsRepository(applicationContext.userDataStore)
+        apiRepository = ApiRepository()
 
-        // Crea i repository
-        val settingsRepository = SettingsRepository(userDataStore)
-        val apiRepository = ApiRepository()
+        val factory = ViewModelFactory(settingsRepository, apiRepository)
 
-        // Crea i ViewModel passando i repository
-        val appViewModel = AppViewModel(settingsRepository)
-        val authViewModel = AuthViewModel(settingsRepository, apiRepository)
+        appViewModel = ViewModelProvider(this, factory)[AppViewModel::class.java]
+        authViewModel = ViewModelProvider(this, factory)[AuthViewModel::class.java]
+        mainScreenViewModel = ViewModelProvider(this, factory)[MainScreenViewModel::class.java]
+        feedViewModel = ViewModelProvider(this, factory)[FeedViewModel::class.java]
 
         enableEdgeToEdge()
 
@@ -40,9 +54,18 @@ class MainActivity : ComponentActivity() {
             FotogramTheme {
                 App(
                     appViewModel = appViewModel,
-                    authViewModel = authViewModel
+                    authViewModel = authViewModel,
+                    mainScreenViewModel = mainScreenViewModel,
+                    feedViewModel = feedViewModel
                 )
             }
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (::apiRepository.isInitialized) {
+            apiRepository.close()
         }
     }
 }
@@ -50,11 +73,12 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun App(
     appViewModel: AppViewModel,
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel,
+    mainScreenViewModel: MainScreenViewModel,
+    feedViewModel: FeedViewModel
 ) {
     when (appViewModel.isLoggedIn) {
         null -> {
-            // Stato di caricamento
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -63,7 +87,6 @@ fun App(
             }
         }
         false -> {
-            // Non loggato - mostra schermata di registrazione
             SignInScreen(
                 viewModel = authViewModel,
                 onRegistrationSuccess = {
@@ -72,14 +95,12 @@ fun App(
             )
         }
         true -> {
-            // Loggato - TODO: mostra home/bacheca
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                androidx.compose.material3.Text("Home - TODO")
-
-            }
+            MainScreen(
+                viewModel = mainScreenViewModel,
+                feedViewModel = feedViewModel,
+                userId = appViewModel.userId,
+                sessionId = appViewModel.sessionId
+            )
         }
     }
 }

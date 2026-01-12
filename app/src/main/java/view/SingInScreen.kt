@@ -135,10 +135,7 @@ fun SignInScreen(
     }
 }
 
-/**
- * Composable che gestisce la selezione di un'immagine dalla galleria
- * e la converte in Base64
- */
+
 @Composable
 fun rememberImagePickerLauncher(
     onImageSelected: (String) -> Unit
@@ -157,9 +154,7 @@ fun rememberImagePickerLauncher(
     }
 }
 
-/**
- * Converte un'immagine URI in Base64, rispettando il limite di 80K caratteri
- */
+
 private fun uriToBase64(context: android.content.Context, uri: Uri): String? {
     return try {
         val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
@@ -174,9 +169,7 @@ private fun uriToBase64(context: android.content.Context, uri: Uri): String? {
     }
 }
 
-/**
- * Comprime un Bitmap in Base64 rispettando il limite di caratteri specificato
- */
+
 private fun compressBitmapToBase64(bitmap: Bitmap, maxSizeChars: Int): String {
     var quality = 90
     var base64String: String
