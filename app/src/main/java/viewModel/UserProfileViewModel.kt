@@ -22,67 +22,41 @@ class UserProfileViewModel(
     var isSaving by mutableStateOf(false)
         private set
 
-    var errorMessage by mutableStateOf<String?>(null)
+    var showError by mutableStateOf(false)
         private set
 
     var userInfo by mutableStateOf<UserResponse?>(null)
         private set
 
-    // State per il dialog di modifica
     var showEditDialog by mutableStateOf(false)
         private set
 
     init {
         loadUserInfo()
     }
+
     fun loadUserInfo() {
         viewModelScope.launch {
             isLoading = true
-            errorMessage = null
+            showError = false
 
             try {
                 val result = apiRepository.getUserInfo(sessionId, userId)
 
                 if (result.isSuccess) {
-                    val response = result.getOrNull()!!
-
-                    userInfo = UserResponse(
-                        id = response.id,
-                        createdAt = response.createdAt,
-                        username = response.username,
-                        bio = response.bio,
-                        dateOfBirth = response.dateOfBirth,
-                        profilePicture = response.profilePicture,
-                        isYourFollower = response.isYourFollower,
-                        isYourFollowing = response.isYourFollowing,
-                        followersCount = response.followersCount,
-                        followingCount = response.followingCount,
-                        postCount = response.postCount
-                    )
-
-                    Log.d("UserProfileViewModel", "Dati utente caricati: ${userInfo?.username} ${userInfo?.bio}")
-                    Log.d("UserProfileViewModel", "Dati utente caricati:${sessionId}")
+                    userInfo = result.getOrNull()
+                    Log.d("UserProfileViewModel", "Dati utente caricati: ${userInfo?.username}")
                 } else {
-                    val exception = result.exceptionOrNull()
-                    errorMessage = "Errore: ${exception?.message}"
-                    Log.e("UserProfileViewModel", "Errore recupero dati utente", exception)
+                    showError = true
+                    Log.e("UserProfileViewModel", "Errore recupero dati", result.exceptionOrNull())
                 }
-
             } catch (e: Exception) {
-                errorMessage = "Errore di rete: ${e.message}"
+                showError = true
                 Log.e("UserProfileViewModel", "Eccezione", e)
             } finally {
                 isLoading = false
             }
         }
-    }
-
-    fun openEditDialog() {
-        showEditDialog = true
-    }
-
-    fun closeEditDialog() {
-        showEditDialog = false
     }
 
     fun updateProfile(
@@ -93,10 +67,7 @@ class UserProfileViewModel(
     ) {
         viewModelScope.launch {
             isSaving = true
-            errorMessage = null
-
-            // Log per vedere cosa stai inviando
-            Log.d("UserProfileViewModel", "Invio al server - bio: '$newDateOfBirth', bioConvertita: ${newDateOfBirth}")
+            showError = false
 
             try {
                 val result = apiRepository.updateProfile(
@@ -108,21 +79,14 @@ class UserProfileViewModel(
                 )
 
                 if (result.isSuccess) {
-                    // Log per vedere cosa restituisce il server
-                    val response = result.getOrNull()
-                    Log.d("UserProfileViewModel", "Risposta server - bio: '${response?.dateOfBirth}', date: '${response?.dateOfBirth}'")
-
                     closeEditDialog()
                     loadUserInfo()
-
                 } else {
-                    val exception = result.exceptionOrNull()
-                    errorMessage = "Errore: ${exception?.message}"
-                    Log.e("UserProfileViewModel", "Errore aggiornamento profilo", exception)
+                    showError = true
+                    Log.e("UserProfileViewModel", "Errore aggiornamento", result.exceptionOrNull())
                 }
-
             } catch (e: Exception) {
-                errorMessage = "Errore di rete: ${e.message}"
+                showError = true
                 Log.e("UserProfileViewModel", "Eccezione", e)
             } finally {
                 isSaving = false
@@ -130,7 +94,8 @@ class UserProfileViewModel(
         }
     }
 
-    fun refresh() {
-        loadUserInfo()
-    }
+    fun openEditDialog() { showEditDialog = true }
+    fun closeEditDialog() { showEditDialog = false }
+    fun clearError() { showError = false }
+    fun refresh() { loadUserInfo() }
 }

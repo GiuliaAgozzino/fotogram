@@ -12,9 +12,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class UpdateUserRequest(
     val username: String,
-    @EncodeDefault
     val bio: String? = null,
-    @EncodeDefault
     val dateOfBirth: String? = null
 )
 // PUT /user/image - Aggiorna immagine profilo

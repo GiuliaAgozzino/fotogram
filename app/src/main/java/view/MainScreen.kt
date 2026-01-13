@@ -19,8 +19,8 @@ fun MainScreen(
 ) {
     val mainScreenViewModel: MainScreenViewModel = viewModel()
     val currentTab by mainScreenViewModel.currentTab
-    val feedViewModel: FeedViewModel = viewModel(factory = userFactory)
-    val userProfileViewModel: UserProfileViewModel = viewModel (factory = userFactory)
+
+
     Scaffold(
         bottomBar = {
             if (currentTab != MainTab.CREATEPOST) {
@@ -32,19 +32,26 @@ fun MainScreen(
         }
     ) { innerPadding ->
         when (currentTab) {
-            MainTab.FEED -> FeedScreen(
-                modifier = Modifier.padding(innerPadding),
-                feedViewModel= feedViewModel
-            )
+            MainTab.FEED ->{
+                val feedViewModel: FeedViewModel = viewModel(factory = userFactory)
+                FeedScreen(
+                    modifier = Modifier.padding(innerPadding),
+                    feedViewModel= feedViewModel
+                )
+            }
             MainTab.CREATEPOST -> CreatePostScreen(
                 modifier = Modifier.padding(innerPadding),
                 onBackToFeed = { mainScreenViewModel.changeTab(MainTab.FEED) },
 
             )
-            MainTab.USERPROFILE -> UserProfileScreen(
-                modifier = Modifier.padding(innerPadding),
-                userProfileViewModel = userProfileViewModel
-            )
+            MainTab.USERPROFILE -> {
+                val userProfileViewModel: UserProfileViewModel = viewModel (factory = userFactory)
+                UserProfileScreen(
+
+                    modifier = Modifier.padding(innerPadding),
+                    userProfileViewModel = userProfileViewModel
+                )
+            }
         }
     }
 }

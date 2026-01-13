@@ -18,23 +18,13 @@ class AuthViewModel(
     var isLoading by mutableStateOf(false)
         private set
 
-    var errorMessage by mutableStateOf<String?>(null)
+    var showError by mutableStateOf(false)
         private set
 
     fun register(userName: String, pictureBase64: String, onSuccess: () -> Unit) {
-        if (!isUserNameOk(userName)) {
-            errorMessage = "Nome utente non valido (max 15 caratteri)"
-            return
-        }
-
-        if (pictureBase64.isEmpty()) {
-            errorMessage = "Seleziona un'immagine di profilo"
-            return
-        }
-
         viewModelScope.launch {
             isLoading = true
-            errorMessage = null
+            showError = false
 
             try {
                 val result = apiRepository.register(userName, pictureBase64)
@@ -42,29 +32,19 @@ class AuthViewModel(
                 if (result.isSuccess) {
                     val response = result.getOrNull()!!
 
-                    Log.d("Auth-AuthViewModel", "Registrazione ok, salvo dati...")
-
-                    // Salva e aspetta che sia completato
                     settingsRepository.saveUserIsSessionId(
                         userId = response.userId,
                         sessionId = response.sessionId
                     )
 
-                    // Verifica che sia salvato
-                    val savedUserId = settingsRepository.getUserId()
-                    val savedSessionId = settingsRepository.getSessionId()
-                    Log.d("AuthViewModel", "Verifica salvataggio: userId=$savedUserId, sessionId=$savedSessionId")
-
+                    Log.d("AuthViewModel", "Registrazione completata")
                     onSuccess()
-
                 } else {
-                    val exception = result.exceptionOrNull()
-                    errorMessage = "Errore: ${exception?.message}"
-                    Log.e("AuthViewModel", "Errore registrazione", exception)
+                    showError = true
+                    Log.e("AuthViewModel", "Errore registrazione", result.exceptionOrNull())
                 }
-
             } catch (e: Exception) {
-                errorMessage = "Errore di rete: ${e.message}"
+                showError = true
                 Log.e("AuthViewModel", "Eccezione", e)
             } finally {
                 isLoading = false
@@ -72,11 +52,7 @@ class AuthViewModel(
         }
     }
 
-    fun isUserNameOk(userName: String): Boolean {
-        return userName.isNotEmpty() && userName.length <= 15
-    }
-
     fun clearError() {
-        errorMessage = null
+        showError = false
     }
 }

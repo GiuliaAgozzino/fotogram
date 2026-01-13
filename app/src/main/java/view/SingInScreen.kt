@@ -13,17 +13,9 @@ import androidx.compose.ui.unit.dp
 import viewModel.AuthViewModel
 import android.graphics.BitmapFactory
 import android.util.Base64
-import android.graphics.Bitmap
-import android.net.Uri
-import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.border
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import java.io.ByteArrayOutputStream
-import java.io.InputStream
+import view.common.ErrorDialog
+import view.common.LimitedTextField
+import view.common.rememberImagePicker
 
 @Composable
 fun SignInScreen(
@@ -33,10 +25,14 @@ fun SignInScreen(
     var name by remember { mutableStateOf("") }
     var pictureBase64 by remember { mutableStateOf("") }
 
-    // Launcher per selezionare l'immagine
-    val imagePickerLauncher = rememberImagePickerLauncher { base64 ->
+    val imagePicker = rememberImagePicker { base64 ->
         pictureBase64 = base64
-        viewModel.clearError() // Pulisce l'errore quando l'utente seleziona un'immagine
+    }
+
+    if (viewModel.showError) {
+        ErrorDialog(
+            onDismiss = { viewModel.clearError() }
+        )
     }
 
     Column(
@@ -53,7 +49,6 @@ fun SignInScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Anteprima immagine profilo
         if (pictureBase64.isNotEmpty()) {
             val imageBytes = Base64.decode(pictureBase64, Base64.NO_WRAP)
             val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
@@ -67,32 +62,18 @@ fun SignInScreen(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // Nome
-        OutlinedTextField(
+        LimitedTextField(
             value = name,
-            onValueChange = {
-                if (it.length <= 15) {
-                    name = it
-                    viewModel.clearError()
-                }
-            },
-            label = { Text("Nome utente") },
-            supportingText = { Text("${name.length}/15") },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !viewModel.isLoading,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black,
-                disabledTextColor = Color.Gray
-            )
+            onValueChange = { name = it },
+            label = "Nome utente",
+            maxLength = 15,
+            enabled = !viewModel.isLoading
         )
-        
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Bottone selezione immagine
         Button(
-            onClick = { imagePickerLauncher.launch("image/*") },
+            onClick = { imagePicker.launch("image/*") },
             modifier = Modifier.fillMaxWidth(),
             enabled = !viewModel.isLoading
         ) {
@@ -101,17 +82,6 @@ fun SignInScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Messaggio di errore dal ViewModel
-        viewModel.errorMessage?.let { error ->
-            Text(
-                text = error,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
-        // Bottone registrazione
         Button(
             onClick = {
                 viewModel.register(
@@ -133,54 +103,4 @@ fun SignInScreen(
             }
         }
     }
-}
-
-
-@Composable
-fun rememberImagePickerLauncher(
-    onImageSelected: (String) -> Unit
-): androidx.activity.result.ActivityResultLauncher<String> {
-    val context = LocalContext.current
-
-    return rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            val base64 = uriToBase64(context, uri)
-            if (base64 != null) {
-                onImageSelected(base64)
-            }
-        }
-    }
-}
-
-
-private fun uriToBase64(context: android.content.Context, uri: Uri): String? {
-    return try {
-        val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
-        val bitmap = BitmapFactory.decodeStream(inputStream)
-        inputStream?.close()
-
-        // Comprimi l'immagine fino a rispettare il limite di 80K caratteri
-        compressBitmapToBase64(bitmap, maxSizeChars = 80_000)
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
-    }
-}
-
-
-private fun compressBitmapToBase64(bitmap: Bitmap, maxSizeChars: Int): String {
-    var quality = 90
-    var base64String: String
-
-    do {
-        val outputStream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
-        val byteArray = outputStream.toByteArray()
-        base64String = Base64.encodeToString(byteArray, Base64.NO_WRAP)
-        quality -= 5
-    } while (base64String.length > maxSizeChars && quality > 10)
-
-    return base64String
 }

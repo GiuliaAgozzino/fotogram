@@ -5,12 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.fotogram.ui.theme.FotogramTheme
@@ -20,6 +15,7 @@ import viewModel.AppViewModel
 import viewModel.AuthViewModel
 import viewModel.AuthViewModelFactory
 import viewModel.UserViewModelFactory
+import view.common.LoadingIndicator
 
 private val Context.userDataStore by preferencesDataStore(name = "user_prefs")
 
@@ -65,14 +61,7 @@ fun App(
     apiRepository: ApiRepository
 ) {
     when (appViewModel.isLoggedIn) {
-        null -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        }
+        null -> LoadingIndicator()
 
         false -> {
             val authViewModel: AuthViewModel = viewModel(factory = authFactory)
@@ -86,7 +75,6 @@ fun App(
         }
 
         true -> {
-            // Crea UserViewModelFactory solo quando hai userId e sessionId
             val userFactory = UserViewModelFactory(
                 userId = appViewModel.userId,
                 sessionId = appViewModel.sessionId,
