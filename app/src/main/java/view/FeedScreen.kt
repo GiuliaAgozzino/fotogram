@@ -1,30 +1,50 @@
 package view
 
-import android.util.Log
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import viewModel.FeedViewModel
+import view.common.ErrorDialog
+import view.common.LoadingIndicator
+import view.common.PostItem
 
 @Composable
-fun FeedScreen(modifier: Modifier, feedViewModel: FeedViewModel) {
+fun FeedScreen(
+    modifier: Modifier = Modifier,
+    feedViewModel: FeedViewModel,
+) {
+    // Dialog errore
+    if (feedViewModel.showError) {
+        ErrorDialog(
+            onDismiss = { feedViewModel.clearError() },
+            onRetry = { feedViewModel.refresh() }
+        )
+    }
 
-    Column(
-        modifier = modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp)
     ) {
-        Text(text = "Feed Screen")
+        when {
+            feedViewModel.isLoading -> LoadingIndicator()
 
-        Spacer(modifier = Modifier.height(16.dp))
+            feedViewModel.post != null -> {
+                PostItem(
+                    post = feedViewModel.post!!,
+                    onAuthorClick = { authorId ->
+                        // TODO: apri mappa
+                    },
+                    onLocationClick = { postId ->
+                        // TODO: apri mappa
+                    }
+                )
+            }
 
-        Text(text = "User ID: ${feedViewModel.userId ?: "N/A"}")
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(text = "Session ID: ${feedViewModel.sessionId ?: "N/A"}")
+            else -> {
+                androidx.compose.material3.Text("Nessun post disponibile")
+            }
+        }
     }
 }
