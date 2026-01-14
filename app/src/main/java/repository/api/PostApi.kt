@@ -74,13 +74,13 @@ class PostApi {
     }
 
     private suspend fun getFeedPostIds(
-        sessionId: String,
+        sessionId: String?,
         maxPostId: Int,
         limit: Int = 10
     ): Result<List<Int>> {
 
         return try {
-            Log.d("PostApi", "Caricamento feed")
+            Log.d("PostApi", "Caricamento feed: maxPostId=$maxPostId, limit=$limit")
 
             val response: HttpResponse = client.get("$baseUrl/feed") {
                 header("x-session-id", sessionId)
@@ -92,7 +92,7 @@ class PostApi {
 
             if (response.status.value == 200) {
                 val body: List<Int> = response.body()
-                Log.d("PostApi", "Feed ricevuto: $body")
+                Log.d("PostApi", "Feed ricevuto: ${body.size} post IDs")
                 Result.success(body)
             } else {
                 Log.e("PostApi", "Errore caricamento feed: ${response.status.value}")
@@ -105,7 +105,7 @@ class PostApi {
         }
     }
 
-    suspend fun getUserFeed(sessionId: String, maxPostId: Int): Result<List<PostWithAuthor>> {
+    suspend fun getUserFeed(sessionId: String?, maxPostId: Int): Result<List<PostWithAuthor>> {
         val feedPostIdsResult = getFeedPostIds(sessionId, maxPostId)
         if (feedPostIdsResult.isFailure) {
             return Result.failure(feedPostIdsResult.exceptionOrNull()!!)

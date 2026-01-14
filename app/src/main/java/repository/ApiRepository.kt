@@ -34,6 +34,9 @@ class ApiRepository {
     suspend fun getPostWithAuthor(sessionId: String?, postId: Int): Result<PostWithAuthor> {
         return postApi.getPostWithAuthor(sessionId, postId)
     }
+    suspend fun getUserFeed(sessionId: String?, maxPostId: Int): Result<List<PostWithAuthor>>{
+        return  postApi.getUserFeed(sessionId, maxPostId)
+    }
 
     fun close() {
         ApiClient.close()

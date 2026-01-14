@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
@@ -20,8 +19,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.SegmentedButtonDefaults.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.draw.clip
@@ -33,18 +30,34 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import model.PostWithAuthor
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 
 @Composable
 fun PostItem(
     post: PostWithAuthor,
     onAuthorClick: (authorId: Int) -> Unit,
     onLocationClick: (postId: Int) -> Unit,
+    onImageClick: (imageBase64: String) -> Unit,  // ← NUOVO: per fullscreen
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(8.dp)
+            .then(
+                // ← Bordo colorato per post di amici
+                if (post.isFollowing) {
+                    Modifier.border(
+                        width = 2.dp,
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = CardDefaults.shape
+                    )
+                } else {
+                    Modifier
+                }
+            ),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
@@ -66,11 +79,31 @@ fun PostItem(
                 )
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = post.authorName,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = post.authorName,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        // Badge "Amico" per distinguere visivamente
+                        if (post.isFollowing) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                shape = MaterialTheme.shapes.small
+                            ) {
+                                Text(
+                                    text = "Amico",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                    }
 
                     // Location sotto il nome (se presente)
                     if (post.hasLocation) {
@@ -97,23 +130,23 @@ fun PostItem(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Immagine del post (se presente)
-            post.contentPicture?.let { picture ->
-                PostImage(
-                    base64 = picture,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(300.dp)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
-            // Testo del post (se presente)
+            // Testo del post (se presente) - PRIMA dell'immagine
             post.contentText?.let { text ->
                 Text(
                     text = text,
                     style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(vertical = 8.dp)
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+
+            // Immagine del post (se presente) - CLICCABILE per fullscreen
+            post.contentPicture?.let { picture ->
+                PostImage(
+                    base64 = picture,
+                    onClick = { onImageClick(picture) },  // ← Click per fullscreen
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp)
                 )
             }
         }
@@ -122,6 +155,7 @@ fun PostItem(
 @Composable
 fun PostImage(
     base64: String,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val bitmap = remember(base64) {
@@ -138,7 +172,8 @@ fun PostImage(
             bitmap = it.asImageBitmap(),
             contentDescription = "Post image",
             modifier = modifier
-                .clip(RoundedCornerShape(8.dp)),
+                .clip(RoundedCornerShape(8.dp))
+                .clickable { onClick() },  // ← Cliccabile
             contentScale = ContentScale.Crop
         )
     }
