@@ -84,7 +84,7 @@ fun PostItem(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = post.authorName,
+                            text = post.authorName?: "sconosciuto",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )

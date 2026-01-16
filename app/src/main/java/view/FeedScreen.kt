@@ -5,9 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,6 +17,7 @@ import view.common.LoadingIndicator
 import view.common.PostItem
 import view.common.FullscreenImageDialog
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedScreen(
     modifier: Modifier = Modifier,
@@ -27,6 +27,22 @@ fun FeedScreen(
 ) {
     var fullscreenImage by remember { mutableStateOf<String?>(null) }
     val listState = rememberLazyListState()
+
+    // Come fa il prof: derivedStateOf per tracciare l'ultimo elemento visibile
+    val lastVisibleIndex = remember {
+        derivedStateOf { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+    }
+
+    LaunchedEffect(lastVisibleIndex.value) {
+        val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+        val total = listState.layoutInfo.totalItemsCount
+        val threshold = total - 3
+
+        if (lastVisible != null && lastVisible >= threshold) {
+            Log.d("FeedScreen", "Trigger loadMore - lastVisible=$lastVisible, total=$total")
+            feedViewModel.fetchNewPosts()
+        }
+    }
 
     // Dialog errore
     if (feedViewModel.showError) {
@@ -44,32 +60,12 @@ fun FeedScreen(
         )
     }
 
-    // Infinite scroll - derivedStateOf per performance
-    val shouldLoadMore by remember {
-        derivedStateOf {
-            val layoutInfo = listState.layoutInfo
-            val totalItems = layoutInfo.totalItemsCount
-            val lastVisibleIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
 
-            // Carica quando siamo a 3 elementi dalla fine
-            val threshold = 3
-
-            totalItems > 0 &&
-                    lastVisibleIndex >= totalItems - threshold &&
-                    feedViewModel.hasMorePosts &&
-                    !feedViewModel.isLoadingMore &&
-                    !feedViewModel.isLoading
-        }
-    }
-
-    LaunchedEffect(shouldLoadMore) {
-        if (shouldLoadMore) {
-            Log.d("FeedScreen", "🔄 Trigger loadMore")
-            feedViewModel.loadMorePosts()
-        }
-    }
-
-    Box(modifier = modifier.fillMaxSize()) {
+    PullToRefreshBox(
+        modifier = modifier.fillMaxSize(),
+        isRefreshing = feedViewModel.isRefreshing,
+        onRefresh = { feedViewModel.refresh() }
+    ) {
         when {
             feedViewModel.isLoading && feedViewModel.posts.isEmpty() -> {
                 LoadingIndicator()
@@ -80,17 +76,7 @@ fun FeedScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Text("Nessun post disponibile")
-                        Button(onClick = { feedViewModel.refresh() }) {
-                            Icon(Icons.Default.Refresh, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Ricarica")
-                        }
-                    }
+                    Text("Nessun post disponibile")
                 }
             }
 
@@ -120,7 +106,7 @@ fun FeedScreen(
                     }
 
                     // Indicatore di caricamento in fondo
-                    if (feedViewModel.isLoadingMore) {
+                    if (feedViewModel.isLoading) {
                         item(key = "loading_indicator") {
                             Box(
                                 modifier = Modifier
@@ -130,24 +116,6 @@ fun FeedScreen(
                             ) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(32.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    // Messaggio fine post
-                    if (!feedViewModel.hasMorePosts && feedViewModel.posts.isNotEmpty() && !feedViewModel.isLoadingMore) {
-                        item(key = "end_message") {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "Hai visto tutti i post!",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }

@@ -49,7 +49,7 @@ fun MainScreen(
                 UserProfileScreen(
 
                     modifier = Modifier.padding(innerPadding),
-                    userProfileViewModel = userProfileViewModel
+                    userProfileViewModel = userProfileViewModel,
                 )
             }
         }

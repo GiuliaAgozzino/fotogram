@@ -38,7 +38,7 @@ fun ProfileHeader(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = user.username, style = MaterialTheme.typography.headlineMedium)
+        Text(text = user.username?: "sconosciuto", style = MaterialTheme.typography.headlineMedium)
 
         Spacer(modifier = Modifier.height(8.dp))
 

@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
@@ -21,8 +22,16 @@ fun ProfileImage(
 ) {
     if (base64.isNullOrEmpty()) return
 
-    val imageBytes = Base64.decode(base64, Base64.NO_WRAP)
-    val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+    val bitmap = remember(base64) {
+        try {
+            val imageBytes = Base64.decode(base64, Base64.NO_WRAP)
+            BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    if (bitmap == null) return
 
     Image(
         bitmap = bitmap.asImageBitmap(),

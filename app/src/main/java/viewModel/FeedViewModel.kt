@@ -6,7 +6,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import model.PostWithAuthor
 import repository.ApiRepository
@@ -17,57 +16,45 @@ class FeedViewModel(
     private val apiRepository: ApiRepository
 ) : ViewModel() {
 
+    var posts by mutableStateOf<List<PostWithAuthor>>(emptyList())
+        private set
+
     var isLoading by mutableStateOf(false)
         private set
 
-    var isLoadingMore by mutableStateOf(false)
+    var isRefreshing by mutableStateOf(false)
         private set
 
     var showError by mutableStateOf(false)
         private set
 
-    var posts by mutableStateOf<List<PostWithAuthor>>(emptyList())
-        private set
-
-    var hasMorePosts by mutableStateOf(true)
-        private set
-
     private var currentMaxPostId: Int = 0
-    private var loadMoreJob: Job? = null
 
     init {
-        loadFeed()
+        fetchNewPosts()
     }
 
-    private fun loadFeed() {
+    fun fetchNewPosts() {
+        if (isLoading) return
+
         viewModelScope.launch {
             isLoading = true
-            showError = false
-            currentMaxPostId = 0
-            hasMorePosts = true
-
-            Log.d("FeedViewModel", "Caricamento feed iniziale")
+            Log.d("FeedViewModel", "Caricamento post: maxPostId=$currentMaxPostId")
 
             try {
-                val result = apiRepository.getUserFeed(sessionId, maxPostId = 0)
+                val result = apiRepository.getUserFeed(sessionId, maxPostId = currentMaxPostId)
 
                 if (result.isSuccess) {
                     val newPosts = result.getOrNull() ?: emptyList()
-                    posts = newPosts
 
                     if (newPosts.isNotEmpty()) {
-                        currentMaxPostId = newPosts.last().postId
-                        Log.d("FeedViewModel", "Feed caricato: ${newPosts.size} post, lastId=$currentMaxPostId")
-                    }
-
-                    // Se abbiamo ricevuto meno di 10 post, non ce ne sono altri
-                    if (newPosts.isEmpty()) {
-                        hasMorePosts = false
-                        Log.d("FeedViewModel", "Fine post raggiunta (meno di 10 ricevuti)")
+                        posts = posts + newPosts
+                        currentMaxPostId = newPosts.last().postId -1
+                        Log.d("FeedViewModel", "Caricati ${newPosts.size} post. Totale: ${posts.size}")
                     }
                 } else {
                     showError = true
-                    Log.e("FeedViewModel", "Errore: ${result.exceptionOrNull()?.message}", result.exceptionOrNull())
+                    Log.e("FeedViewModel", "Errore: ${result.exceptionOrNull()?.message}")
                 }
             } catch (e: Exception) {
                 showError = true
@@ -78,69 +65,19 @@ class FeedViewModel(
         }
     }
 
-    fun loadMorePosts() {
-        // Protezioni multiple
-        if (isLoadingMore || isLoading || !hasMorePosts) {
-            Log.d("FeedViewModel", "Skip loadMore: isLoadingMore=$isLoadingMore, isLoading=$isLoading, hasMore=$hasMorePosts")
-            return
-        }
+    fun refresh() {
+        if (isRefreshing) return
 
-        // Cancella job precedente se ancora attivo
-        loadMoreJob?.cancel()
-
-        loadMoreJob = viewModelScope.launch {
-            isLoadingMore = true
-            Log.d("FeedViewModel", "⬇️ Caricamento post aggiuntivi: maxPostId=$currentMaxPostId")
-
-            try {
-                val result = apiRepository.getUserFeed(sessionId, maxPostId = currentMaxPostId)
-
-                if (result.isSuccess) {
-                    val newPosts = result.getOrNull() ?: emptyList()
-
-                    if (newPosts.isNotEmpty()) {
-                        // Filtra eventuali duplicati
-                        val existingIds = posts.map { it.postId }.toSet()
-                        val uniqueNewPosts = newPosts.filter { it.postId !in existingIds }
-
-                        if (uniqueNewPosts.isNotEmpty()) {
-                            posts = posts + uniqueNewPosts
-                            currentMaxPostId = uniqueNewPosts.last().postId
-                            Log.d("FeedViewModel", "✅ Caricati ${uniqueNewPosts.size} nuovi post. Totale: ${posts.size}")
-                        }
-
-                        // Se abbiamo ricevuto meno di 10 post, non ce ne sono altri
-                        if (newPosts.isEmpty()) {
-                            hasMorePosts = false
-                            Log.d("FeedViewModel", "Fine post raggiunta")
-                        }
-                    } else {
-                        hasMorePosts = false
-                        Log.d("FeedViewModel", "Nessun altro post disponibile")
-                    }
-                } else {
-                    Log.e("FeedViewModel", "Errore caricamento: ${result.exceptionOrNull()?.message}")
-                }
-            } catch (e: Exception) {
-                Log.e("FeedViewModel", "Errore di rete: ${e.message}", e)
-            } finally {
-                isLoadingMore = false
-            }
+        viewModelScope.launch {
+            isRefreshing = true
+            posts = emptyList()
+            currentMaxPostId = 0
+            fetchNewPosts()
+            isRefreshing = false
         }
     }
 
     fun clearError() {
         showError = false
-    }
-
-    fun refresh() {
-        loadMoreJob?.cancel()
-        posts = emptyList()
-        loadFeed()
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        loadMoreJob?.cancel()
     }
 }

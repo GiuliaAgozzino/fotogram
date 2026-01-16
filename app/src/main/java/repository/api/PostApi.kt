@@ -62,13 +62,14 @@ class PostApi {
         val postWithAuthor = PostWithAuthor(
             postId = post.id,
             authorId = post.authorId,
-            authorName = user.username,
-            authorPicture = user.profilePicture,
+            authorName = user.username?: "sconosciuto",
+            authorPicture = user.profilePicture?: "",
             isFollowing = user.isYourFollowing,
-            contentPicture = post.contentPicture,
-            contentText = post.contentText,
+            contentPicture = post.contentPicture?: "",
+            contentText = post.contentText?: "",
             hasLocation = post.location != null
         )
+
 
         return Result.success(postWithAuthor)
     }

@@ -1,7 +1,6 @@
 package model
 
 
-import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.Serializable
 
 
@@ -37,10 +36,10 @@ data class CreateUserResponse(
 data class UserResponse(
     val id: Int,
     val createdAt: String,
-    val username: String,
+    val username: String? = "sconosciuto",
     val bio: String? = null,
     val dateOfBirth: String? = null,
-    val profilePicture: String? = null, // Può essere null!
+    val profilePicture: String? = null,
     val isYourFollower: Boolean = false,
     val isYourFollowing: Boolean = false,
     val followersCount: Int = 0,
@@ -50,8 +49,8 @@ data class UserResponse(
 //Risposta post utente
 @Serializable
 data class LocationResponse(
-    val latitude: Double,
-    val longitude: Double
+    val latitude: Double?,
+    val longitude: Double?
 )
 
 @Serializable
@@ -67,7 +66,7 @@ data class PostResponse(
 data class PostWithAuthor(
     val postId: Int,
     val authorId: Int,
-    val authorName: String,
+    val authorName: String? = "sconosciuto",
     val authorPicture: String?,
     val isFollowing: Boolean,
     val contentPicture: String,

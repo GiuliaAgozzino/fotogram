@@ -11,7 +11,7 @@ import model.UserResponse
 import repository.ApiRepository
 
 class UserProfileViewModel(
-    private val userId: Int?,
+    val userId: Int?,
     private val sessionId: String?,
     private val apiRepository: ApiRepository
 ) : ViewModel() {
@@ -35,6 +35,8 @@ class UserProfileViewModel(
         loadUserInfo()
     }
 
+    var curretUserId by mutableStateOf<Int?>(null)
+
     fun loadUserInfo() {
         viewModelScope.launch {
             isLoading = true
@@ -45,6 +47,7 @@ class UserProfileViewModel(
 
                 if (result.isSuccess) {
                     userInfo = result.getOrNull()
+                    curretUserId = userInfo?.id
                     Log.d("UserProfileViewModel", "Dati utente caricati: ${userInfo?.username}")
                 } else {
                     showError = true

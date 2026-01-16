@@ -25,7 +25,7 @@ import java.util.*
 @Composable
 fun UserProfileScreen(
     modifier: Modifier = Modifier,
-    userProfileViewModel: UserProfileViewModel
+    userProfileViewModel: UserProfileViewModel,
 ) {
     // Dialog errore
     if (userProfileViewModel.showError) {
@@ -43,7 +43,7 @@ fun UserProfileScreen(
     ) {
         when {
             userProfileViewModel.isLoading -> LoadingIndicator()
-            userProfileViewModel.userInfo != null -> {
+            userProfileViewModel.userInfo != null && userProfileViewModel.curretUserId != userProfileViewModel.userId -> {
                 ProfileHeader(
                     user = userProfileViewModel.userInfo!!,
                     showEditButton = true,
@@ -78,7 +78,7 @@ fun EditProfileDialog(
     onDismiss: () -> Unit,
     onSave: (name: String, bio: String, dateOfBirth: String, picture: String?) -> Unit
 ) {
-    var name by remember { mutableStateOf(currentUser.username) }
+    var name by remember { mutableStateOf(currentUser.username ?: "sconosciuto") }
     var bio by remember { mutableStateOf(currentUser.bio ?: "") }
     var dateOfBirth by remember { mutableStateOf(currentUser.dateOfBirth ?: "") }
     var newPictureBase64 by remember { mutableStateOf<String?>(null) }
