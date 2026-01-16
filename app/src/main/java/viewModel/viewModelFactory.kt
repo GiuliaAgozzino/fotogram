@@ -23,7 +23,8 @@ class AuthViewModelFactory(
         }
     }
 }
-class UserViewModelFactory(
+
+class MyUserViewModelFactory(
     private val userId: Int?,
     private val sessionId: String?,
     private val apiRepository: ApiRepository
@@ -34,11 +35,11 @@ class UserViewModelFactory(
             modelClass.isAssignableFrom(FeedViewModel::class.java) -> {
                 FeedViewModel(userId, sessionId, apiRepository) as T
             }
-           // modelClass.isAssignableFrom(CreatePostViewModel::class.java) -> {
-              //  CreatePostViewModel(userId, sessionId, apiRepository) as T
+            // modelClass.isAssignableFrom(CreatePostViewModel::class.java) -> {
+            //  CreatePostViewModel(userId, sessionId, apiRepository) as T
             //}
-            modelClass.isAssignableFrom(UserProfileViewModel::class.java) -> {
-                UserProfileViewModel(userId, sessionId, apiRepository) as T
+            modelClass.isAssignableFrom(MyUserProfileViewModel::class.java) -> {
+                MyUserProfileViewModel(userId, sessionId, apiRepository) as T
             }
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }

@@ -39,7 +39,7 @@ class FeedViewModel(
 
         viewModelScope.launch {
             isLoading = true
-            Log.d("FeedViewModel", "Caricamento post: maxPostId=$currentMaxPostId")
+            Log.d("FeedViewModel", "Caricamento post: maxPostId=$currentMaxPostId $sessionId")
 
             try {
                 val result = apiRepository.getUserFeed(sessionId, maxPostId = currentMaxPostId)

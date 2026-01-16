@@ -11,7 +11,7 @@ import repository.SettingsRepository
 enum class MainTab {
     FEED,
     CREATEPOST,
-    USERPROFILE
+    MYUSERPROFILE,
 }
 class MainScreenViewModel() : ViewModel() {
 

@@ -31,8 +31,8 @@ fun NavBar(
             label = { Text("Create") }
         )
         NavigationBarItem(
-            selected = currentTab == MainTab.USERPROFILE,
-            onClick = { onNavigate(MainTab.USERPROFILE) },
+            selected = currentTab == MainTab.MYUSERPROFILE,
+            onClick = { onNavigate(MainTab.MYUSERPROFILE) },
             icon = { Icon(Icons.Filled.Person, contentDescription = "Profile") },
             label = { Text("Profile") }
         )
