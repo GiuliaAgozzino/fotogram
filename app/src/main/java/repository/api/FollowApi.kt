@@ -6,6 +6,7 @@ import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
+import io.ktor.client.request.put
 import io.ktor.client.statement.HttpResponse
 import repository.ApiClient
 
@@ -21,7 +22,7 @@ class FollowApi {
         return try {
             Log.d("FollowApi", "Chiamata per follow")
 
-            val response: HttpResponse = client.get("$baseUrl/feed/$targetId") {
+            val response: HttpResponse = client.put("$baseUrl/follow/$targetId") {
                 header("x-session-id", sessionId)
             }
 
@@ -48,7 +49,7 @@ class FollowApi {
         return try {
             Log.d("FollowApi", "Chiamata per unfollow")
 
-            val response: HttpResponse = client.delete("$baseUrl/feed/$targetId") {
+            val response: HttpResponse = client.delete("$baseUrl/follow/$targetId") {
                 header("x-session-id", sessionId)
             }
 

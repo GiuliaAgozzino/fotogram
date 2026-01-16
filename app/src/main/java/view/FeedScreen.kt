@@ -23,7 +23,8 @@ fun FeedScreen(
     modifier: Modifier = Modifier,
     feedViewModel: FeedViewModel,
     onNavigateToProfile: (userId: Int) -> Unit = {},
-    onNavigateToMap: (postId: Int) -> Unit = {}
+    onNavigateToMap: (postId: Int) -> Unit = {},
+    currentUserId: Int
 ) {
     var fullscreenImage by remember { mutableStateOf<String?>(null) }
     val listState = rememberLazyListState()

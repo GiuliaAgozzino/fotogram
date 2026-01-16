@@ -15,7 +15,6 @@ import viewModel.AppViewModel
 import viewModel.AuthViewModel
 import viewModel.AuthViewModelFactory
 import view.common.LoadingIndicator
-import viewModel.MyUserViewModelFactory
 
 private val Context.userDataStore by preferencesDataStore(name = "user_prefs")
 
@@ -75,14 +74,11 @@ fun App(
         }
 
         true -> {
-            val userFactory = MyUserViewModelFactory(
-                userId = appViewModel.userId,
-                sessionId = appViewModel.sessionId,
-                apiRepository = apiRepository
-            )
-
+            // Passa direttamente i parametri a MainScreen
             MainScreen(
-                userFactory = userFactory,
+                currentUserId = appViewModel.userId ?: 0,
+                sessionId = appViewModel.sessionId ?: "",
+                apiRepository = apiRepository
             )
         }
     }

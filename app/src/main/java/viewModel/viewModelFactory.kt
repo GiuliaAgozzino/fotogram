@@ -45,3 +45,20 @@ class MyUserViewModelFactory(
         }
     }
 }
+
+class UserProfileViewModelFactory(
+    private val targetUserId: Int,      // L'utente da visualizzare
+    private val sessionId: String?,     // Sessione dell'utente loggato
+    private val apiRepository: ApiRepository
+) : ViewModelProvider.Factory {
+
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        return when {
+            modelClass.isAssignableFrom(UserProfileViewModel::class.java) -> {
+                UserProfileViewModel(targetUserId, sessionId, apiRepository) as T
+            }
+
+            else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+        }
+    }
+}

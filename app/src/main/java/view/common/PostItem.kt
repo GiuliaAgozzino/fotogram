@@ -37,27 +37,32 @@ import androidx.compose.material3.*
 @Composable
 fun PostItem(
     post: PostWithAuthor,
+    isOwnPost: Boolean = false,  // ← NUOVO: true se è un post dell'utente loggato
     onAuthorClick: (authorId: Int) -> Unit,
     onLocationClick: (postId: Int) -> Unit,
-    onImageClick: (imageBase64: String) -> Unit,  // ← NUOVO: per fullscreen
+    onImageClick: (imageBase64: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Determina lo stile del bordo in base al tipo di post
+    val borderModifier = when {
+        isOwnPost -> Modifier.border(
+            width = 2.dp,
+            color = MaterialTheme.colorScheme.tertiary,  // Colore diverso per i propri post
+            shape = CardDefaults.shape
+        )
+        post.isFollowing -> Modifier.border(
+            width = 2.dp,
+            color = MaterialTheme.colorScheme.primary,  // Bordo per gli amici
+            shape = CardDefaults.shape
+        )
+        else -> Modifier  // Nessun bordo per gli estranei
+    }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
             .padding(8.dp)
-            .then(
-                // ← Bordo colorato per post di amici
-                if (post.isFollowing) {
-                    Modifier.border(
-                        width = 2.dp,
-                        color = MaterialTheme.colorScheme.primary,
-                        shape = CardDefaults.shape
-                    )
-                } else {
-                    Modifier
-                }
-            ),
+            .then(borderModifier),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
@@ -84,24 +89,42 @@ fun PostItem(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = post.authorName?: "sconosciuto",
+                            text = post.authorName ?: "sconosciuto",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
 
-                        // Badge "Amico" per distinguere visivamente
-                        if (post.isFollowing) {
-                            Surface(
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                shape = MaterialTheme.shapes.small
-                            ) {
-                                Text(
-                                    text = "Amico",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
+                        // Badge per distinguere il tipo di post
+                        when {
+                            isOwnPost -> {
+                                // Badge "Tu" per i propri post
+                                Surface(
+                                    color = MaterialTheme.colorScheme.tertiaryContainer,
+                                    shape = MaterialTheme.shapes.small
+                                ) {
+                                    Text(
+                                        text = "Tu",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
                             }
+                            post.isFollowing -> {
+                                // Badge "Amico" per i post degli amici
+                                Surface(
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    shape = MaterialTheme.shapes.small
+                                ) {
+                                    Text(
+                                        text = "Amico",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                            // Nessun badge per gli estranei
                         }
                     }
 
@@ -143,7 +166,7 @@ fun PostItem(
             post.contentPicture?.let { picture ->
                 PostImage(
                     base64 = picture,
-                    onClick = { onImageClick(picture) },  // ← Click per fullscreen
+                    onClick = { onImageClick(picture) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(300.dp)
@@ -152,6 +175,7 @@ fun PostItem(
         }
     }
 }
+
 @Composable
 fun PostImage(
     base64: String,
@@ -173,7 +197,7 @@ fun PostImage(
             contentDescription = "Post image",
             modifier = modifier
                 .clip(RoundedCornerShape(8.dp))
-                .clickable { onClick() },  // ← Cliccabile
+                .clickable { onClick() },
             contentScale = ContentScale.Crop
         )
     }
