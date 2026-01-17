@@ -32,15 +32,13 @@ class ApiRepository {
         return userApi.updateProfile(sessionId, username, bio, dateOfBirth, newPicture)
     }
 
-    // Post
-    suspend fun getPostWithAuthor(sessionId: String?, postId: Int): Result<PostWithAuthor> {
-        return postApi.getPostWithAuthor(sessionId, postId)
-    }
     suspend fun getUserFeed(sessionId: String?, maxPostId: Int): Result<List<PostWithAuthor>>{
         return  postApi.getUserFeed(sessionId, maxPostId)
     }
 
-    // Nel tuo ApiRepository, assicurati che i metodi siano così:
+    suspend fun getUserPosts(sessionId: String?, maxPostId: Int, authorId: Int): Result<List<PostWithAuthor>>{
+        return  postApi.gestUserPost(sessionId, maxPostId, authorId)
+    }
 
     suspend fun followUser(sessionId: String?, targetUserId: Int): Result<Unit> {
         return followApi.follow(sessionId, targetUserId)  // ← deve restituire Result<Unit>

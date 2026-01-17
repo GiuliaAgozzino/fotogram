@@ -1,7 +1,11 @@
 package view
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
@@ -13,11 +17,13 @@ import androidx.compose.ui.unit.dp
 import model.UserResponse
 import viewModel.MyUserProfileViewModel
 import view.common.ErrorDialog
+import view.common.FullscreenImageDialog
 import view.common.rememberImagePicker
-import  view.common.LoadingIndicator
-import  view.common.ProfileImage
+import view.common.LoadingIndicator
+import view.common.ProfileImage
 import view.common.LimitedTextField
 import view.common.ProfileHeader
+import view.common.PostItem
 
 import java.text.SimpleDateFormat
 import java.util.*
@@ -27,6 +33,25 @@ fun MyUserProfileScreen(
     modifier: Modifier = Modifier,
     userProfileViewModel: MyUserProfileViewModel,
 ) {
+    var fullscreenImage by remember { mutableStateOf<String?>(null) }
+    val listState = rememberLazyListState()
+
+    // Infinite scroll
+    val lastVisibleIndex = remember {
+        derivedStateOf { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+    }
+
+    LaunchedEffect(lastVisibleIndex.value) {
+        val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+        val total = listState.layoutInfo.totalItemsCount
+        val threshold = total - 3
+
+        if (lastVisible != null && lastVisible >= threshold && userProfileViewModel.hasMorePosts) {
+            Log.d("MyUserProfileScreen", "Trigger loadMore - lastVisible=$lastVisible, total=$total")
+            userProfileViewModel.loadMorePosts()
+        }
+    }
+
     // Dialog errore
     if (userProfileViewModel.showError) {
         ErrorDialog(
@@ -35,22 +60,12 @@ fun MyUserProfileScreen(
         )
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        when {
-            userProfileViewModel.isLoading -> LoadingIndicator()
-            userProfileViewModel.userInfo != null -> {
-                ProfileHeader(
-                    user = userProfileViewModel.userInfo!!,
-                    showEditButton = true,
-                    onEditClick = { userProfileViewModel.openEditDialog() }
-                )
-            }
-        }
+    // Dialog immagine fullscreen
+    fullscreenImage?.let { image ->
+        FullscreenImageDialog(
+            imageBase64 = image,
+            onDismiss = { fullscreenImage = null }
+        )
     }
 
     // Dialog di modifica
@@ -63,6 +78,86 @@ fun MyUserProfileScreen(
                 userProfileViewModel.updateProfile(name, bio, dateOfBirth, picture)
             }
         )
+    }
+
+    // Contenuto principale
+    when {
+        userProfileViewModel.isLoading && userProfileViewModel.userInfo == null -> {
+            Box(
+                modifier = modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                LoadingIndicator()
+            }
+        }
+
+        userProfileViewModel.userInfo != null -> {
+            LazyColumn(
+                state = listState,
+                modifier = modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Header del profilo
+                item(key = "profile_header") {
+                    ProfileHeader(
+                        user = userProfileViewModel.userInfo!!,
+                        showEditButton = true,
+                        showFollowButton = false,
+                        onEditClick = { userProfileViewModel.openEditDialog() }
+                    )
+                }
+
+                // Post dell'utente
+                items(
+                    items = userProfileViewModel.userPosts,
+                    key = { post -> post.postId }
+                ) { post ->
+                    PostItem(
+                        post = post,
+                        isOwnPost = true,
+                        isAuthorClickable = false,
+                        onAuthorClick = { },
+                        onLocationClick = { /* TODO: navigate to map */ },
+                        onImageClick = { imageBase64 ->
+                            fullscreenImage = imageBase64
+                        }
+                    )
+                }
+
+                // Footer: loading o fine post
+                item(key = "footer") {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        when {
+                            userProfileViewModel.isLoadingPosts -> {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+                            !userProfileViewModel.hasMorePosts && userProfileViewModel.userPosts.isNotEmpty() -> {
+                                Text(
+                                    text = "Hai visto tutti i post 🎉",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            !userProfileViewModel.hasMorePosts && userProfileViewModel.userPosts.isEmpty() -> {
+                                Text(
+                                    text = "Nessun post pubblicato",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -77,7 +172,7 @@ fun EditProfileDialog(
     onDismiss: () -> Unit,
     onSave: (name: String, bio: String, dateOfBirth: String, picture: String?) -> Unit
 ) {
-    var name by remember { mutableStateOf(currentUser.username ?: "sconosciuto") }
+    var name by remember { mutableStateOf(currentUser.username ?: "utente sconosciuto") }
     var bio by remember { mutableStateOf(currentUser.bio ?: "") }
     var dateOfBirth by remember { mutableStateOf(currentUser.dateOfBirth ?: "") }
     var newPictureBase64 by remember { mutableStateOf<String?>(null) }
@@ -144,7 +239,6 @@ fun EditProfileDialog(
 }
 
 // COMPONENTI FORM
-
 
 @Composable
 fun DatePickerField(

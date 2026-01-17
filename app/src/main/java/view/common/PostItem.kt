@@ -40,6 +40,7 @@ import androidx.compose.foundation.border
 fun PostItem(
     post: PostWithAuthor,
     isOwnPost: Boolean = false,
+    isAuthorClickable: Boolean = true,
     onAuthorClick: (authorId: Int) -> Unit,
     onLocationClick: (postId: Int) -> Unit,
     onImageClick: (imageBase64: String) -> Unit,
@@ -68,11 +69,17 @@ fun PostItem(
                 .fillMaxWidth()
                 .padding(12.dp)
         ) {
-            // Header con autore
+            // Header con autore - MODIFICATO
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onAuthorClick(post.authorId) },
+                    .then(
+                        if (isAuthorClickable) {
+                            Modifier.clickable { onAuthorClick(post.authorId) }
+                        } else {
+                            Modifier
+                        }
+                    ),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -82,11 +89,12 @@ fun PostItem(
                 )
 
                 Text(
-                    text = post.authorName ?: "Sconosciuto",
+                    text = post.authorName ?: "utente sconosciuto",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
             }
+
 
             Spacer(modifier = Modifier.height(12.dp))
 

@@ -16,6 +16,10 @@ class FeedViewModel(
     private val apiRepository: ApiRepository
 ) : ViewModel() {
 
+    companion object {
+        private const val PAGE_SIZE = 10
+    }
+
     var posts by mutableStateOf<List<PostWithAuthor>>(emptyList())
         private set
 
@@ -28,7 +32,9 @@ class FeedViewModel(
     var showError by mutableStateOf(false)
         private set
 
-    // Scroll state (come il prof)
+    var hasMorePosts by mutableStateOf(true)
+        private set
+
     var firstVisibleItemIndex by mutableStateOf(0)
         private set
     var firstVisibleItemScrollOffset by mutableStateOf(0)
@@ -41,11 +47,11 @@ class FeedViewModel(
     }
 
     fun fetchNewPosts() {
-        if (isLoading) return
+        if (isLoading || !hasMorePosts) return
 
         viewModelScope.launch {
             isLoading = true
-            Log.d("FeedViewModel", "Caricamento post: maxPostId=$currentMaxPostId")
+            Log.d("FeedViewModel", "Caricamento post: maxPostId=$currentMaxPostId, hasMore=$hasMorePosts")
 
             try {
                 val result = apiRepository.getUserFeed(sessionId, maxPostId = currentMaxPostId)
@@ -53,10 +59,32 @@ class FeedViewModel(
                 if (result.isSuccess) {
                     val newPosts = result.getOrNull() ?: emptyList()
 
-                    if (newPosts.isNotEmpty()) {
-                        posts = posts + newPosts
-                        currentMaxPostId = newPosts.last().postId - 1
-                        Log.d("FeedViewModel", "Caricati ${newPosts.size} post. Totale: ${posts.size}")
+                    Log.d("FeedViewModel", "Ricevuti ${newPosts.size} post")
+
+                    when {
+                        newPosts.isEmpty() -> {
+                            // Nessun post ricevuto
+                            hasMorePosts = false
+                            Log.d("FeedViewModel", "Fine post: lista vuota")
+                        }
+                        newPosts.size < PAGE_SIZE -> {
+                            // Meno post del previsto
+                            posts = posts + newPosts
+                            hasMorePosts = false
+                            Log.d("FeedViewModel", "Fine post: ricevuti ${newPosts.size} < $PAGE_SIZE")
+                        }
+                        else -> {
+                            posts = posts + newPosts
+                            currentMaxPostId = newPosts.last().postId - 1
+
+                            // Se maxPostId diventa <= 0, non ci sono più post
+                            if (currentMaxPostId <= 0) {
+                                hasMorePosts = false
+                                Log.d("FeedViewModel", "Fine post: maxPostId <= 0")
+                            }
+
+                            Log.d("FeedViewModel", "Caricati ${newPosts.size} post. Totale: ${posts.size}, nextMaxPostId=$currentMaxPostId")
+                        }
                     }
                 } else {
                     showError = true
@@ -78,6 +106,7 @@ class FeedViewModel(
             isRefreshing = true
             posts = emptyList()
             currentMaxPostId = 0
+            hasMorePosts = true
             fetchNewPosts()
             isRefreshing = false
         }

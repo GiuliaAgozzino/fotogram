@@ -41,7 +41,7 @@ class PostApi {
         }
     }
 
-    suspend fun getPostWithAuthor(sessionId: String?, postId: Int): Result<PostWithAuthor> {
+    private suspend fun getPostWithAuthor(sessionId: String?, postId: Int): Result<PostWithAuthor> {
         // Step 1: Prendi il post
         val postResult = getPostInfo(sessionId, postId)
         if (postResult.isFailure) {
@@ -62,7 +62,7 @@ class PostApi {
         val postWithAuthor = PostWithAuthor(
             postId = post.id,
             authorId = post.authorId,
-            authorName = user.username?: "sconosciuto",
+            authorName = user.username?: "utente sconosciuto",
             authorPicture = user.profilePicture?: "",
             isFollowing = user.isYourFollowing,
             contentPicture = post.contentPicture?: "",
@@ -77,18 +77,16 @@ class PostApi {
     private suspend fun getFeedPostIds(
         sessionId: String?,
         maxPostId: Int,
-        limit: Int = 10
     ): Result<List<Int>> {
 
         return try {
-            Log.d("PostApi", "Caricamento feed: maxPostId=$maxPostId, limit=$limit")
+            Log.d("PostApi", "Caricamento feed: maxPostId=$maxPostId")
 
             val response: HttpResponse = client.get("$baseUrl/feed") {
                 header("x-session-id", sessionId)
                 if(maxPostId != 0){
                     parameter("maxPostId", maxPostId)
                 }
-                parameter("limit", limit)
             }
 
             if (response.status.value == 200) {
@@ -113,6 +111,61 @@ class PostApi {
         }
 
         val postIds = feedPostIdsResult.getOrNull()!!
+        val posts = mutableListOf<PostWithAuthor>()
+
+        for (id in postIds) {
+            val postResult = getPostWithAuthor(sessionId, id)
+            if (postResult.isSuccess) {
+                posts.add(postResult.getOrNull()!!)
+            } else {
+                Log.e("PostApi", "Errore caricamento post $id: ${postResult.exceptionOrNull()?.message}")
+            }
+        }
+
+        return Result.success(posts)
+    }
+    private suspend fun getUserPostIds(
+        sessionId: String?,
+        maxPostId: Int,
+        authorId: Int
+    ): Result<List<Int>> {
+
+        return try {
+            Log.d("PostApi", "Caricamento Post: maxPostId=$maxPostId, authorIs=$authorId, sesssionId=$sessionId")
+
+            val response: HttpResponse = client.get("$baseUrl/post/list/$authorId") {
+                header("x-session-id", sessionId)
+                if(maxPostId != 0){
+                    parameter("maxPostId", maxPostId)
+                }
+            }
+
+            if (response.status.value == 200) {
+                val body: List<Int> = response.body()
+                Log.d("PostApi", "Post ricevuto: ${body.size} post IDs")
+                Result.success(body)
+            } else {
+                Log.e("PostApi", "Errore caricamento post: ${response.status.value}")
+                Result.failure(Exception("Errore caricamento post: ${response.status.value}"))
+            }
+
+        } catch (e: Exception) {
+            Log.e("PostApi", "Errore di rete: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun gestUserPost(
+        sessionId: String?,
+        maxPostId: Int,
+        authorId: Int
+    ): Result<List<PostWithAuthor>> {
+        val userPostIdsResult = getUserPostIds(sessionId, maxPostId, authorId)
+        if (userPostIdsResult.isFailure) {
+            return Result.failure(userPostIdsResult.exceptionOrNull()!!)
+        }
+
+        val postIds = userPostIdsResult.getOrNull()!!
         val posts = mutableListOf<PostWithAuthor>()
 
         for (id in postIds) {

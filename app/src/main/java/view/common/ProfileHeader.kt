@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +30,7 @@ fun ProfileHeader(
     showEditButton: Boolean = false,
     showFollowButton: Boolean = false,
     isFollowing: Boolean = false,
+    isFollowLoading: Boolean = false,
     onEditClick: (() -> Unit)? = null,
     onFollowClick: (() -> Unit)? = null
 ) {
@@ -40,7 +42,7 @@ fun ProfileHeader(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = user.username ?: "sconosciuto", style = MaterialTheme.typography.headlineMedium)
+        Text(text = user.username ?: "utente sconosciuto", style = MaterialTheme.typography.headlineMedium)
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -89,15 +91,32 @@ fun ProfileHeader(
                 if (isFollowing) {
                     OutlinedButton(
                         onClick = onFollowClick,
-                        modifier = Modifier.fillMaxWidth(0.8f)
+                        modifier = Modifier.fillMaxWidth(0.8f),
+                        enabled = !isFollowLoading
                     ) {
-                        Text("Non seguire")
+                        if (isFollowLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                        Text("Non seguire più")
                     }
                 } else {
                     Button(
                         onClick = onFollowClick,
-                        modifier = Modifier.fillMaxWidth(0.8f)
+                        modifier = Modifier.fillMaxWidth(0.8f),
+                        enabled = !isFollowLoading
                     ) {
+                        if (isFollowLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
                         Text("Segui")
                     }
                 }
@@ -111,7 +130,7 @@ fun ProfileHeader(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Post di ${user.username}",
+            text = "Post di ${user.username?: "utente sconosciuto"}",
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier
                 .fillMaxWidth()

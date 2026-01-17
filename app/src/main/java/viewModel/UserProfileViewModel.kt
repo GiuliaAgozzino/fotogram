@@ -17,6 +17,10 @@ class UserProfileViewModel(
     private val apiRepository: ApiRepository
 ) : ViewModel() {
 
+    companion object {
+        private const val PAGE_SIZE = 10
+    }
+
     var isLoading by mutableStateOf(false)
         private set
 
@@ -26,7 +30,6 @@ class UserProfileViewModel(
     var userInfo by mutableStateOf<UserResponse?>(null)
         private set
 
-    // Stato per il follow
     var isFollowLoading by mutableStateOf(false)
         private set
 
@@ -35,6 +38,9 @@ class UserProfileViewModel(
         private set
 
     var isLoadingPosts by mutableStateOf(false)
+        private set
+
+    var hasMorePosts by mutableStateOf(true)
         private set
 
     private var currentMaxPostId: Int = 0
@@ -51,10 +57,10 @@ class UserProfileViewModel(
 
                 if (result.isSuccess) {
                     userInfo = result.getOrNull()
-                    Log.d("UserProfileViewModel", "Dati utente caricati: ${userInfo?.username} ${sessionId}")
+                    Log.d("UserProfileViewModel", "Dati utente caricati: ${userInfo?.username}")
 
-                    // Dopo aver caricato le info, carica i post
-                    //loadUserPosts()
+                    //  carico i post
+                    loadUserPosts()
                 } else {
                     showError = true
                     Log.e("UserProfileViewModel", "Errore recupero dati", result.exceptionOrNull())
@@ -68,8 +74,8 @@ class UserProfileViewModel(
         }
     }
 
-    /*private fun loadUserPosts() {
-        if (targetUserId == null || isLoadingPosts) return
+    fun loadUserPosts() {
+        if (targetUserId == null || isLoadingPosts || !hasMorePosts) return
 
         viewModelScope.launch {
             isLoadingPosts = true
@@ -77,28 +83,49 @@ class UserProfileViewModel(
             try {
                 val result = apiRepository.getUserPosts(
                     sessionId = sessionId,
-                    userId = targetUserId,
+                    authorId = targetUserId,
                     maxPostId = currentMaxPostId
                 )
 
                 if (result.isSuccess) {
                     val newPosts = result.getOrNull() ?: emptyList()
 
-                    if (newPosts.isNotEmpty()) {
-                        userPosts = userPosts + newPosts
-                        currentMaxPostId = newPosts.last().postId - 1
-                        Log.d("UserProfileViewModel", "Caricati ${newPosts.size} post")
+                    Log.d("UserProfileViewModel", "Ricevuti ${newPosts.size} post")
+
+                    when {
+                        newPosts.isEmpty() -> {
+                            hasMorePosts = false
+                            Log.d("UserProfileViewModel", "Fine post: lista vuota")
+                        }
+                        newPosts.size < PAGE_SIZE -> {
+                            userPosts = userPosts + newPosts
+                            hasMorePosts = false
+                            Log.d("UserProfileViewModel", "Fine post: ricevuti ${newPosts.size} < $PAGE_SIZE")
+                        }
+                        else -> {
+                            userPosts = userPosts + newPosts
+                            currentMaxPostId = newPosts.last().postId - 1
+
+                            if (currentMaxPostId!! <= 0) {
+                                hasMorePosts = false
+                                Log.d("UserProfileViewModel", "Fine post: maxPostId <= 0")
+                            }
+
+                            Log.d("UserProfileViewModel", "Caricati ${newPosts.size} post. Totale: ${userPosts.size}")
+                        }
                     }
                 } else {
-                    Log.e("UserProfileViewModel", "Errore caricamento post", result.exceptionOrNull())
+                    showError = true
+                    Log.e("UserProfileViewModel", "Errore: ${result.exceptionOrNull()?.message}")
                 }
             } catch (e: Exception) {
+                showError = true
                 Log.e("UserProfileViewModel", "Eccezione caricamento post", e)
             } finally {
                 isLoadingPosts = false
             }
         }
-    }*/
+    }
 
     fun toggleFollow() {
         if (targetUserId == null || isFollowLoading) return
@@ -109,19 +136,16 @@ class UserProfileViewModel(
             isFollowLoading = true
 
             try {
-                // Chiama l'API appropriata
                 val result: Result<Unit> = if (currentlyFollowing) {
                     apiRepository.unfollowUser(sessionId, targetUserId)
                 } else {
                     apiRepository.followUser(sessionId, targetUserId)
                 }
 
-                // Controlla il risultato
                 result.onSuccess {
-                    // Aggiorna lo stato locale
                     userInfo = userInfo?.copy(
                         isYourFollowing = !currentlyFollowing,
-                        followersCount = (userInfo?.followersCount?: 0) + if (currentlyFollowing) -1 else 1
+                        followersCount = (userInfo?.followersCount ?: 0) + if (currentlyFollowing) -1 else 1
                     )
                     Log.d("UserProfileViewModel", "Follow toggle: ora following = ${!currentlyFollowing}")
                 }.onFailure { exception ->
@@ -137,9 +161,9 @@ class UserProfileViewModel(
         }
     }
 
-   /* fun loadMorePosts() {
+    fun loadMorePosts() {
         loadUserPosts()
-    }*/
+    }
 
     fun clearError() {
         showError = false
@@ -148,6 +172,7 @@ class UserProfileViewModel(
     fun refresh() {
         userPosts = emptyList()
         currentMaxPostId = 0
+        hasMorePosts = true
         loadUserInfo()
     }
 }

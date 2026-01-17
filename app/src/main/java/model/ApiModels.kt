@@ -36,7 +36,7 @@ data class CreateUserResponse(
 data class UserResponse(
     val id: Int,
     val createdAt: String,
-    val username: String? = "sconosciuto",
+    val username: String? = " utente sconosciuto",
     val bio: String? = null,
     val dateOfBirth: String? = null,
     val profilePicture: String? = null,
@@ -66,7 +66,7 @@ data class PostResponse(
 data class PostWithAuthor(
     val postId: Int,
     val authorId: Int,
-    val authorName: String? = "sconosciuto",
+    val authorName: String? = "utente sconosciuto",
     val authorPicture: String?,
     val isFollowing: Boolean,
     val contentPicture: String,

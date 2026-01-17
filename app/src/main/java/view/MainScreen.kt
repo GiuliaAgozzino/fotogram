@@ -91,14 +91,7 @@ fun MainScreen(
                 UserProfileScreen(
                     modifier = Modifier.padding(innerPadding),
                     userProfileViewModel = userProfileViewModel,
-                    onBackClick = { mainScreenViewModel.navigateTo(AppScreen.Feed) },
-                    onNavigateToUserProfile = { userId ->
-                        if (userId == currentUserId) {
-                            mainScreenViewModel.navigateTo(AppScreen.MyProfile)
-                        } else {
-                            mainScreenViewModel.navigateTo(AppScreen.UserProfile(userId))
-                        }
-                    }
+                    onBackClick = { mainScreenViewModel.navigateTo(AppScreen.Feed) }
                 )
             }
 

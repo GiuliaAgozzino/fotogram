@@ -10,6 +10,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import viewModel.FeedViewModel
 import view.common.ErrorDialog
@@ -28,7 +29,6 @@ fun FeedScreen(
 ) {
     var fullscreenImage by remember { mutableStateOf<String?>(null) }
 
-    // Ripristina posizione scroll
     val listState = rememberLazyListState(
         initialFirstVisibleItemIndex = feedViewModel.firstVisibleItemIndex,
         initialFirstVisibleItemScrollOffset = feedViewModel.firstVisibleItemScrollOffset
@@ -54,7 +54,8 @@ fun FeedScreen(
         val total = listState.layoutInfo.totalItemsCount
         val threshold = total - 3
 
-        if (lastVisible != null && lastVisible >= threshold) {
+
+        if (lastVisible != null && lastVisible >= threshold && feedViewModel.hasMorePosts) {
             Log.d("FeedScreen", "Trigger loadMore - lastVisible=$lastVisible, total=$total")
             feedViewModel.fetchNewPosts()
         }
@@ -86,14 +87,6 @@ fun FeedScreen(
                 LoadingIndicator()
             }
 
-            feedViewModel.posts.isEmpty() && !feedViewModel.isLoading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Nessun post disponibile")
-                }
-            }
 
             else -> {
                 LazyColumn(
@@ -121,17 +114,27 @@ fun FeedScreen(
                         )
                     }
 
-                    if (feedViewModel.isLoading) {
-                        item(key = "loading_indicator") {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(32.dp)
-                                )
+
+                    item(key = "footer") {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            when {
+                                feedViewModel.isLoading -> {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(32.dp)
+                                    )
+                                }
+                                !feedViewModel.hasMorePosts -> {
+                                    Text(
+                                        text = "Hai visto tutti i post 🎉",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         }
                     }
