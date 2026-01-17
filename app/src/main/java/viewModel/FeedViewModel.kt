@@ -28,6 +28,12 @@ class FeedViewModel(
     var showError by mutableStateOf(false)
         private set
 
+    // Scroll state (come il prof)
+    var firstVisibleItemIndex by mutableStateOf(0)
+        private set
+    var firstVisibleItemScrollOffset by mutableStateOf(0)
+        private set
+
     private var currentMaxPostId: Int = 0
 
     init {
@@ -39,7 +45,7 @@ class FeedViewModel(
 
         viewModelScope.launch {
             isLoading = true
-            Log.d("FeedViewModel", "Caricamento post: maxPostId=$currentMaxPostId $sessionId")
+            Log.d("FeedViewModel", "Caricamento post: maxPostId=$currentMaxPostId")
 
             try {
                 val result = apiRepository.getUserFeed(sessionId, maxPostId = currentMaxPostId)
@@ -49,7 +55,7 @@ class FeedViewModel(
 
                     if (newPosts.isNotEmpty()) {
                         posts = posts + newPosts
-                        currentMaxPostId = newPosts.last().postId -1
+                        currentMaxPostId = newPosts.last().postId - 1
                         Log.d("FeedViewModel", "Caricati ${newPosts.size} post. Totale: ${posts.size}")
                     }
                 } else {
@@ -75,6 +81,11 @@ class FeedViewModel(
             fetchNewPosts()
             isRefreshing = false
         }
+    }
+
+    fun saveScrollState(index: Int, offset: Int) {
+        firstVisibleItemIndex = index
+        firstVisibleItemScrollOffset = offset
     }
 
     fun clearError() {

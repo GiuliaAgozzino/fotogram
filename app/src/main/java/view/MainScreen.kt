@@ -1,6 +1,5 @@
 package view
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -26,14 +25,8 @@ fun MainScreen(
     val mainScreenViewModel: MainScreenViewModel = viewModel()
     val currentScreen by mainScreenViewModel.currentScreen
 
-    // Factory per i ViewModel dell'utente loggato
     val userFactory = remember(currentUserId, sessionId) {
         MyUserViewModelFactory(currentUserId, sessionId, apiRepository)
-    }
-
-    // Gestione del tasto back di sistema
-    BackHandler(enabled = !mainScreenViewModel.isMainTab()) {
-        mainScreenViewModel.goBack()
     }
 
     Scaffold(
@@ -41,15 +34,13 @@ fun MainScreen(
             if (mainScreenViewModel.shouldShowBottomBar()) {
                 NavBar(
                     currentScreen = currentScreen,
-                    onNavigate = { screen -> mainScreenViewModel.changeTab(screen) }
+                    onNavigate = { screen -> mainScreenViewModel.navigateTo(screen) }
                 )
             }
         }
     ) { innerPadding ->
 
         when (val screen = currentScreen) {
-
-            // ===== TAB PRINCIPALI =====
 
             is AppScreen.Feed -> {
                 val feedViewModel: FeedViewModel = viewModel(factory = userFactory)
@@ -59,21 +50,19 @@ fun MainScreen(
                     currentUserId = currentUserId,
                     onNavigateToProfile = { userId ->
                         if (userId == currentUserId) {
-                            mainScreenViewModel.changeTab(AppScreen.MyProfile)
+                            mainScreenViewModel.navigateTo(AppScreen.MyProfile)
                         } else {
                             mainScreenViewModel.navigateTo(AppScreen.UserProfile(userId))
                         }
                     },
-                    onNavigateToMap = { postId ->
-                        mainScreenViewModel.navigateTo(AppScreen.PostMap(postId))
-                    }
+                    onNavigateToMap = { }
                 )
             }
 
             is AppScreen.CreatePost -> {
                 CreatePostScreen(
                     modifier = Modifier.padding(innerPadding),
-                    onBackToFeed = { mainScreenViewModel.changeTab(AppScreen.Feed) }
+                    onBackToFeed = { mainScreenViewModel.navigateTo(AppScreen.Feed) }
                 )
             }
 
@@ -85,10 +74,7 @@ fun MainScreen(
                 )
             }
 
-            // ===== SCHERMATE SECONDARIE =====
-
             is AppScreen.UserProfile -> {
-                // Crea factory specifica per questo utente
                 val userProfileFactory = remember(screen.userId) {
                     UserProfileViewModelFactory(screen.userId, sessionId, apiRepository)
                 }
@@ -100,11 +86,10 @@ fun MainScreen(
                 UserProfileScreen(
                     modifier = Modifier.padding(innerPadding),
                     userProfileViewModel = userProfileViewModel,
-                    onBackClick = { mainScreenViewModel.goBack() },
+                    onBackClick = { mainScreenViewModel.navigateTo(AppScreen.Feed) },
                     onNavigateToUserProfile = { userId ->
                         if (userId == currentUserId) {
-                            // Torna al tab del mio profilo
-                            mainScreenViewModel.changeTab(AppScreen.MyProfile)
+                            mainScreenViewModel.navigateTo(AppScreen.MyProfile)
                         } else {
                             mainScreenViewModel.navigateTo(AppScreen.UserProfile(userId))
                         }
@@ -113,11 +98,7 @@ fun MainScreen(
             }
 
             is AppScreen.PostMap -> {
-                // TODO: Implementare MapScreen
-                // MapScreen(
-                //     postId = screen.postId,
-                //     onBackClick = { mainScreenViewModel.goBack() }
-                // )
+                // TODO: MapScreen
             }
         }
     }

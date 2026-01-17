@@ -22,18 +22,33 @@ import view.common.FullscreenImageDialog
 fun FeedScreen(
     modifier: Modifier = Modifier,
     feedViewModel: FeedViewModel,
+    currentUserId: Int,
     onNavigateToProfile: (userId: Int) -> Unit = {},
     onNavigateToMap: (postId: Int) -> Unit = {},
-    currentUserId: Int
 ) {
     var fullscreenImage by remember { mutableStateOf<String?>(null) }
-    val listState = rememberLazyListState()
 
-    // Come fa il prof: derivedStateOf per tracciare l'ultimo elemento visibile
+    // Ripristina posizione scroll
+    val listState = rememberLazyListState(
+        initialFirstVisibleItemIndex = feedViewModel.firstVisibleItemIndex,
+        initialFirstVisibleItemScrollOffset = feedViewModel.firstVisibleItemScrollOffset
+    )
+
+    val currentIndex = remember { derivedStateOf { listState.firstVisibleItemIndex } }
+    val currentOffset = remember { derivedStateOf { listState.firstVisibleItemScrollOffset } }
     val lastVisibleIndex = remember {
         derivedStateOf { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
     }
 
+    // Salva posizione scroll
+    LaunchedEffect(currentIndex.value, currentOffset.value) {
+        feedViewModel.saveScrollState(
+            listState.firstVisibleItemIndex,
+            listState.firstVisibleItemScrollOffset
+        )
+    }
+
+    // Carica altri post
     LaunchedEffect(lastVisibleIndex.value) {
         val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
         val total = listState.layoutInfo.totalItemsCount
@@ -60,7 +75,6 @@ fun FeedScreen(
             onDismiss = { fullscreenImage = null }
         )
     }
-
 
     PullToRefreshBox(
         modifier = modifier.fillMaxSize(),
@@ -94,6 +108,7 @@ fun FeedScreen(
                     ) { post ->
                         PostItem(
                             post = post,
+                            isOwnPost = post.authorId == currentUserId,
                             onAuthorClick = { authorId ->
                                 onNavigateToProfile(authorId)
                             },
@@ -106,7 +121,6 @@ fun FeedScreen(
                         )
                     }
 
-                    // Indicatore di caricamento in fondo
                     if (feedViewModel.isLoading) {
                         item(key = "loading_indicator") {
                             Box(

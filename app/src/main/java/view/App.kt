@@ -74,7 +74,6 @@ fun App(
         }
 
         true -> {
-            // Passa direttamente i parametri a MainScreen
             MainScreen(
                 currentUserId = appViewModel.userId ?: 0,
                 sessionId = appViewModel.sessionId ?: "",
