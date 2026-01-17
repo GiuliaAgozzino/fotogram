@@ -1,5 +1,6 @@
 package view
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -25,6 +26,10 @@ fun MainScreen(
     val mainScreenViewModel: MainScreenViewModel = viewModel()
     val currentScreen by mainScreenViewModel.currentScreen
 
+
+    BackHandler(enabled = currentScreen !is AppScreen.Feed) {
+        mainScreenViewModel.navigateTo(AppScreen.Feed)
+    }
     val userFactory = remember(currentUserId, sessionId) {
         MyUserViewModelFactory(currentUserId, sessionId, apiRepository)
     }

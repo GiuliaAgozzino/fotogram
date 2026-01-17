@@ -12,8 +12,8 @@ import model.UserResponse
 import repository.ApiRepository
 
 class UserProfileViewModel(
-    private val targetUserId: Int?,     // L'utente da visualizzare
-    private val sessionId: String?,     // Sessione dell'utente loggato
+    private val targetUserId: Int?,
+    private val sessionId: String?,
     private val apiRepository: ApiRepository
 ) : ViewModel() {
 

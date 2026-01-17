@@ -6,11 +6,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -38,7 +40,7 @@ fun ProfileHeader(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = user.username?: "sconosciuto", style = MaterialTheme.typography.headlineMedium)
+        Text(text = user.username ?: "sconosciuto", style = MaterialTheme.typography.headlineMedium)
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -71,6 +73,7 @@ fun ProfileHeader(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        // Bottone Edit o Follow
         when {
             showEditButton && onEditClick != null -> {
                 Button(
@@ -88,7 +91,6 @@ fun ProfileHeader(
                         onClick = onFollowClick,
                         modifier = Modifier.fillMaxWidth(0.8f)
                     ) {
-                        Spacer(modifier = Modifier.width(8.dp))
                         Text("Non seguire")
                     }
                 } else {
@@ -96,12 +98,25 @@ fun ProfileHeader(
                         onClick = onFollowClick,
                         modifier = Modifier.fillMaxWidth(0.8f)
                     ) {
-                        Spacer(modifier = Modifier.width(8.dp))
                         Text("Segui")
                     }
                 }
             }
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        HorizontalDivider()
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "Post di ${user.username}",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+        )
     }
 }
 

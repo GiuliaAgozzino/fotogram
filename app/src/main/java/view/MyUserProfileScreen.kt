@@ -43,14 +43,13 @@ fun MyUserProfileScreen(
     ) {
         when {
             userProfileViewModel.isLoading -> LoadingIndicator()
-            userProfileViewModel.userInfo != null  -> {
+            userProfileViewModel.userInfo != null -> {
                 ProfileHeader(
                     user = userProfileViewModel.userInfo!!,
                     showEditButton = true,
                     onEditClick = { userProfileViewModel.openEditDialog() }
                 )
             }
-            else -> Text("Nessun dato disponibile")
         }
     }
 
