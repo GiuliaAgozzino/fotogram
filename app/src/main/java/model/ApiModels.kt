@@ -44,7 +44,7 @@ data class UserResponse(
     val isYourFollowing: Boolean = false,
     val followersCount: Int = 0,
     val followingCount: Int = 0,
-    val postCount: Int = 0
+    val postsCount: Int = 0
 )
 //Risposta post utente
 @Serializable

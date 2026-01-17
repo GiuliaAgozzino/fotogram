@@ -84,7 +84,7 @@ class UserApi {
 
             if (response.status.value == 200) {
                 val body: UserResponse = response.body()
-                Log.d("UserApi", "Profilo caricato: ${body.username} post count ${body.postCount} following count ${body.followingCount}")
+                Log.d("UserApi", "Profilo caricato: ${body.username} post count ${body.postsCount} following count ${body.followingCount}")
                 Result.success(body)
             } else {
                 Log.e("UserApi", "Errore caricamento profilo: ${response.status.value}")

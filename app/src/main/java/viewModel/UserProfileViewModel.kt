@@ -51,7 +51,7 @@ class UserProfileViewModel(
 
                 if (result.isSuccess) {
                     userInfo = result.getOrNull()
-                    Log.d("UserProfileViewModel", "Dati utente caricati: ${userInfo?.username}")
+                    Log.d("UserProfileViewModel", "Dati utente caricati: ${userInfo?.username} ${sessionId}")
 
                     // Dopo aver caricato le info, carica i post
                     //loadUserPosts()

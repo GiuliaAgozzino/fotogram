@@ -66,7 +66,7 @@ fun ProfileHeader(
             horizontalArrangement = Arrangement.SpaceEvenly,
             modifier = Modifier.fillMaxWidth()
         ) {
-            StatItem(label = "Post", value = user.postCount)
+            StatItem(label = "Post", value = user.postsCount)
             StatItem(label = "Follower", value = user.followersCount)
             StatItem(label = "Following", value = user.followingCount)
         }
