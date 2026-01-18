@@ -13,16 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import model.PostWithAuthor
 
-/**
- * Gestisce l'infinite scroll per una LazyColumn.
- * Triggera il caricamento quando l'utente si avvicina alla fine della lista.
- *
- * @param listState Lo stato della LazyColumn
- * @param hasMore Se ci sono altri elementi da caricare
- * @param onLoadMore Callback per caricare altri elementi
- * @param threshold Numero di elementi dalla fine per triggerare il caricamento (default 3)
- * @param tag Tag per i log di debug
- */
+
 @Composable
 fun InfiniteScrollEffect(
     listState: LazyListState,
@@ -47,16 +38,7 @@ fun InfiniteScrollEffect(
     }
 }
 
-/**
- * Footer standard per liste di post.
- * Mostra un indicatore di caricamento, un messaggio di fine lista, o un messaggio di lista vuota.
- *
- * @param isLoading Se è in corso un caricamento
- * @param hasMore Se ci sono altri post da caricare
- * @param isEmpty Se la lista è vuota
- * @param emptyMessage Messaggio da mostrare quando la lista è vuota
- * @param endMessage Messaggio da mostrare quando si è arrivati alla fine
- */
+
 @Composable
 fun PostListFooter(
     isLoading: Boolean,
@@ -93,21 +75,7 @@ fun PostListFooter(
     }
 }
 
-/**
- * Extension function per aggiungere una lista di post con footer a una LazyColumn.
- * Semplifica l'aggiunta di post items + footer in diversi screen.
- *
- * @param posts Lista dei post da mostrare
- * @param currentUserId ID dell'utente corrente (per determinare isOwnPost)
- * @param isAuthorClickable Se l'autore del post è cliccabile
- * @param isLoading Se è in corso un caricamento
- * @param hasMore Se ci sono altri post da caricare
- * @param emptyMessage Messaggio da mostrare quando la lista è vuota
- * @param endMessage Messaggio da mostrare quando si è arrivati alla fine
- * @param onAuthorClick Callback quando si clicca sull'autore
- * @param onLocationClick Callback quando si clicca sulla posizione
- * @param onImageClick Callback quando si clicca sull'immagine
- */
+
 fun LazyListScope.postItemsWithFooter(
     posts: List<PostWithAuthor>,
     currentUserId: Int? = null,
@@ -145,25 +113,3 @@ fun LazyListScope.postItemsWithFooter(
     }
 }
 
-/**
- * Versione semplificata di postItemsWithFooter per profili (autore non cliccabile).
- */
-fun LazyListScope.profilePostItems(
-    posts: List<PostWithAuthor>,
-    isOwnProfile: Boolean,
-    isLoading: Boolean,
-    hasMore: Boolean,
-    onLocationClick: (Int) -> Unit = {},
-    onImageClick: (String) -> Unit = {}
-) {
-    postItemsWithFooter(
-        posts = posts,
-        currentUserId = if (isOwnProfile) posts.firstOrNull()?.authorId else null,
-        isAuthorClickable = false,
-        isLoading = isLoading,
-        hasMore = hasMore,
-        onAuthorClick = { },
-        onLocationClick = onLocationClick,
-        onImageClick = onImageClick
-    )
-}

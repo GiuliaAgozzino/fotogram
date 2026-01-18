@@ -21,6 +21,7 @@ import model.PostWithAuthor
 class PostsPaginator(
     private val tag: String,
     private val pageSize: Int = 10,
+    private val initialMaxPostId: Int = 0,
     private val coroutineScope: CoroutineScope,
     private val onLoadingChange: (Boolean) -> Unit,
     private val onPostsChange: (List<PostWithAuthor>) -> Unit,
@@ -29,14 +30,11 @@ class PostsPaginator(
     private val fetchPosts: suspend (maxPostId: Int) -> Result<List<PostWithAuthor>>
 ) {
     private var currentPosts: List<PostWithAuthor> = emptyList()
-    private var currentMaxPostId: Int = 0
+    private var currentMaxPostId: Int = initialMaxPostId
     private var hasMore: Boolean = true
     private var isLoading: Boolean = false
 
-    /**
-     * Carica la prossima pagina di post.
-     * Non fa nulla se è già in corso un caricamento o non ci sono altri post.
-     */
+
     fun loadMore() {
         if (isLoading || !hasMore) return
 
@@ -95,26 +93,14 @@ class PostsPaginator(
         }
     }
 
-    /**
-     * Resetta lo stato del paginator.
-     * Da chiamare prima di un refresh.
-     */
+
     fun reset() {
         currentPosts = emptyList()
-        currentMaxPostId = 0
+        currentMaxPostId = initialMaxPostId
         hasMore = true
         isLoading = false
         onPostsChange(emptyList())
         onHasMoreChange(true)
     }
 
-    /**
-     * Restituisce true se è in corso un caricamento.
-     */
-    fun isCurrentlyLoading(): Boolean = isLoading
-
-    /**
-     * Restituisce true se ci sono altri post da caricare.
-     */
-    fun hasMoreItems(): Boolean = hasMore
 }

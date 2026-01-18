@@ -10,10 +10,7 @@ import model.PostWithAuthor
 import repository.ApiRepository
 import utils.PostsPaginator
 
-/**
- * ViewModel per la schermata Feed.
- * Gestisce il caricamento paginato dei post del feed dell'utente.
- */
+
 class FeedViewModel(
     private val userId: Int?,
     private val sessionId: String?,
@@ -46,6 +43,7 @@ class FeedViewModel(
     // Paginator per la gestione del caricamento
     private val paginator = PostsPaginator(
         tag = "FeedViewModel",
+      //  initialMaxPostId = 11, per vedere solo i post con id <= 10
         coroutineScope = viewModelScope,
         onLoadingChange = { isLoading = it },
         onPostsChange = { posts = it },
@@ -60,16 +58,12 @@ class FeedViewModel(
         paginator.loadMore()
     }
 
-    /**
-     * Carica altri post (paginazione).
-     */
+
     fun fetchNewPosts() {
         paginator.loadMore()
     }
 
-    /**
-     * Ricarica tutto il feed dall'inizio.
-     */
+
     fun refresh() {
         if (isRefreshing) return
 
@@ -81,17 +75,13 @@ class FeedViewModel(
         }
     }
 
-    /**
-     * Salva la posizione di scroll per ripristinarla al ritorno.
-     */
+
     fun saveScrollState(index: Int, offset: Int) {
         firstVisibleItemIndex = index
         firstVisibleItemScrollOffset = offset
     }
 
-    /**
-     * Chiude il dialog di errore.
-     */
+
     fun clearError() {
         showError = false
     }

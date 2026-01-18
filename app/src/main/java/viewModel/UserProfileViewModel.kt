@@ -12,10 +12,7 @@ import model.UserResponse
 import repository.ApiRepository
 import utils.PostsPaginator
 
-/**
- * ViewModel per la schermata del profilo di un altro utente.
- * Gestisce le info utente, i post e la funzionalità di follow/unfollow.
- */
+
 class UserProfileViewModel(
     private val targetUserId: Int?,
     private val sessionId: String?,
@@ -63,9 +60,7 @@ class UserProfileViewModel(
         }
     )
 
-    /**
-     * Carica le informazioni dell'utente e poi i suoi post.
-     */
+
     fun loadUserInfo() {
         if (targetUserId == null) return
 
@@ -95,9 +90,7 @@ class UserProfileViewModel(
         }
     }
 
-    /**
-     * Alterna lo stato di follow/unfollow per l'utente.
-     */
+
     fun toggleFollow() {
         if (targetUserId == null || isFollowLoading) return
 
@@ -132,23 +125,17 @@ class UserProfileViewModel(
         }
     }
 
-    /**
-     * Carica altri post (paginazione).
-     */
+
     fun loadMorePosts() {
         paginator.loadMore()
     }
 
-    /**
-     * Chiude il dialog di errore.
-     */
+
     fun clearError() {
         showError = false
     }
 
-    /**
-     * Ricarica tutto dall'inizio.
-     */
+
     fun refresh() {
         paginator.reset()
         loadUserInfo()

@@ -26,10 +26,8 @@ import view.common.rememberImagePicker
 import java.text.SimpleDateFormat
 import java.util.*
 
-/**
- * Schermata del profilo personale dell'utente.
- * Mostra le info utente, pulsante modifica e lista post.
- */
+
+
 @Composable
 fun MyUserProfileScreen(
     modifier: Modifier = Modifier,

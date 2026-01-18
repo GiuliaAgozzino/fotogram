@@ -52,6 +52,12 @@ data class LocationResponse(
     val latitude: Double?,
     val longitude: Double?
 )
+@Serializable
+data class NewPostRequest(
+    val contentText: String,
+    val contentPicture: String,
+    val location: LocationResponse? = null
+)
 
 @Serializable
 data class PostResponse(
@@ -73,9 +79,7 @@ data class PostWithAuthor(
     val contentText: String?,
     val hasLocation: Boolean
 )
-data class Feed(
-    val feed: List<PostWithAuthor>
-)
+
 
     // Errore generico
 @Serializable

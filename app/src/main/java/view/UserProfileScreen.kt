@@ -17,10 +17,7 @@ import view.common.ProfileHeader
 import view.common.postItemsWithFooter
 import viewModel.UserProfileViewModel
 
-/**
- * Schermata del profilo di un altro utente.
- * Mostra le info utente, pulsante follow/unfollow e lista post.
- */
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserProfileScreen(
@@ -112,11 +109,11 @@ fun UserProfileScreen(
                     // Post dell'utente con footer
                     postItemsWithFooter(
                         posts = userProfileViewModel.userPosts,
-                        currentUserId = null, // Non è il proprio profilo
-                        isAuthorClickable = false, // Siamo già sul profilo
+                        currentUserId = null,
+                        isAuthorClickable = false,
                         isLoading = userProfileViewModel.isLoadingPosts,
                         hasMore = userProfileViewModel.hasMorePosts,
-                        onAuthorClick = { }, // Nessuna azione
+                        onAuthorClick = { },
                         onLocationClick = onNavigateToMap,
                         onImageClick = { fullscreenImage = it }
                     )

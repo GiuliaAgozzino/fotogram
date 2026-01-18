@@ -67,7 +67,8 @@ fun MainScreen(
             is AppScreen.CreatePost -> {
                 CreatePostScreen(
                     modifier = Modifier.padding(innerPadding),
-                    onBackToFeed = { mainScreenViewModel.navigateTo(AppScreen.Feed) }
+                    onBackToFeed = { mainScreenViewModel.navigateTo(AppScreen.Feed) },
+
                 )
             }
 

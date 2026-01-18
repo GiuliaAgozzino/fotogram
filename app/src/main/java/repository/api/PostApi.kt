@@ -5,11 +5,16 @@ import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import model.LocationResponse
+import model.NewPostRequest
 import model.PostResponse
 import model.PostWithAuthor
+import model.UserResponse
 import repository.ApiClient
 
 class PostApi {
@@ -180,6 +185,34 @@ class PostApi {
         return Result.success(posts)
     }
 
+    suspend fun newPost(
+        sessionId: String?,
+        contentText: String,
+        contentPicture: String,
+        location: LocationResponse? = null
+    ): Result<PostResponse> {
+        return try {
+            Log.d("PostApi", "Caricamento nuovo post")
+
+            val response: HttpResponse = client.post("$baseUrl/post") {
+                contentType(ContentType.Application.Json)
+                header("x-session-id", sessionId)
+                setBody(NewPostRequest(contentText, contentPicture, location))
+            }
+
+            if (response.status.value == 200) {
+                val body: PostResponse = response.body()
+                Log.d("PostApi", "Post caricato: ${body.id}")
+                Result.success(body)
+            } else {
+                Log.e("PostApi", "Errore caricamento post: ${response.status.value}")
+                Result.failure(Exception("Errore caricamento post: ${response.status.value}"))
+            }
+        } catch (e: Exception) {
+            Log.e("PostApi", "Errore di rete: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
 
 
     companion object

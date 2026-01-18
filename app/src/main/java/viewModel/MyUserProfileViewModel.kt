@@ -12,10 +12,7 @@ import model.UserResponse
 import repository.ApiRepository
 import utils.PostsPaginator
 
-/**
- * ViewModel per la schermata del profilo personale dell'utente.
- * Gestisce le info utente, i post e la modifica del profilo.
- */
+
 class MyUserProfileViewModel(
     private val userId: Int?,
     private val sessionId: String?,
@@ -70,9 +67,7 @@ class MyUserProfileViewModel(
         loadUserInfo()
     }
 
-    /**
-     * Carica le informazioni dell'utente e poi i suoi post.
-     */
+
     fun loadUserInfo() {
         if (userId == null) return
 
@@ -102,9 +97,7 @@ class MyUserProfileViewModel(
         }
     }
 
-    /**
-     * Aggiorna i dati del profilo.
-     */
+
     fun updateProfile(
         newName: String,
         newBio: String,
@@ -140,37 +133,27 @@ class MyUserProfileViewModel(
         }
     }
 
-    /**
-     * Carica altri post (paginazione).
-     */
+
     fun loadMorePosts() {
         paginator.loadMore()
     }
 
-    /**
-     * Apre il dialog di modifica profilo.
-     */
+
     fun openEditDialog() {
         showEditDialog = true
     }
 
-    /**
-     * Chiude il dialog di modifica profilo.
-     */
+
     fun closeEditDialog() {
         showEditDialog = false
     }
 
-    /**
-     * Chiude il dialog di errore.
-     */
+
     fun clearError() {
         showError = false
     }
 
-    /**
-     * Ricarica tutto dall'inizio.
-     */
+
     fun refresh() {
         paginator.reset()
         loadUserInfo()
