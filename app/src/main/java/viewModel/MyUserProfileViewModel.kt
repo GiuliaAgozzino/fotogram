@@ -10,21 +10,20 @@ import kotlinx.coroutines.launch
 import model.PostWithAuthor
 import model.UserResponse
 import repository.ApiRepository
+import utils.PostsPaginator
 
+/**
+ * ViewModel per la schermata del profilo personale dell'utente.
+ * Gestisce le info utente, i post e la modifica del profilo.
+ */
 class MyUserProfileViewModel(
     private val userId: Int?,
     private val sessionId: String?,
     private val apiRepository: ApiRepository
 ) : ViewModel() {
 
-    companion object {
-        private const val PAGE_SIZE = 10
-    }
-
+    // Stati UI - Info utente
     var isLoading by mutableStateOf(false)
-        private set
-
-    var isSaving by mutableStateOf(false)
         private set
 
     var showError by mutableStateOf(false)
@@ -33,10 +32,14 @@ class MyUserProfileViewModel(
     var userInfo by mutableStateOf<UserResponse?>(null)
         private set
 
+    // Stati UI - Modifica profilo
+    var isSaving by mutableStateOf(false)
+        private set
+
     var showEditDialog by mutableStateOf(false)
         private set
 
-    // Post dell'utente
+    // Stati UI - Post
     var userPosts by mutableStateOf<List<PostWithAuthor>>(emptyList())
         private set
 
@@ -46,12 +49,30 @@ class MyUserProfileViewModel(
     var hasMorePosts by mutableStateOf(true)
         private set
 
-    private var currentMaxPostId: Int =0
+    // Paginator per la gestione del caricamento post
+    private val paginator = PostsPaginator(
+        tag = "MyUserProfileViewModel",
+        coroutineScope = viewModelScope,
+        onLoadingChange = { isLoadingPosts = it },
+        onPostsChange = { userPosts = it },
+        onHasMoreChange = { hasMorePosts = it },
+        onError = { showError = true },
+        fetchPosts = { maxPostId ->
+            apiRepository.getUserPosts(
+                sessionId = sessionId,
+                authorId = userId!!,
+                maxPostId = maxPostId
+            )
+        }
+    )
 
     init {
         loadUserInfo()
     }
 
+    /**
+     * Carica le informazioni dell'utente e poi i suoi post.
+     */
     fun loadUserInfo() {
         if (userId == null) return
 
@@ -67,7 +88,7 @@ class MyUserProfileViewModel(
                     Log.d("MyUserProfileViewModel", "Dati utente caricati: ${userInfo?.username}")
 
                     // Carica i post dopo le info
-                    loadUserPosts()
+                    paginator.loadMore()
                 } else {
                     showError = true
                     Log.e("MyUserProfileViewModel", "Errore recupero dati", result.exceptionOrNull())
@@ -81,62 +102,9 @@ class MyUserProfileViewModel(
         }
     }
 
-    private fun loadUserPosts() {
-        if (userId == null || isLoadingPosts || !hasMorePosts) return
-
-        viewModelScope.launch {
-            isLoadingPosts = true
-
-            try {
-                val result = apiRepository.getUserPosts(
-                    sessionId = sessionId,
-                    authorId = userId,
-                    maxPostId = currentMaxPostId
-                )
-
-                if (result.isSuccess) {
-                    val newPosts = result.getOrNull() ?: emptyList()
-
-                    Log.d("MyUserProfileViewModel", "Ricevuti ${newPosts.size} post")
-
-                    when {
-                        newPosts.isEmpty() -> {
-                            hasMorePosts = false
-                            Log.d("MyUserProfileViewModel", "Fine post: lista vuota")
-                        }
-                        newPosts.size < PAGE_SIZE -> {
-                            userPosts = userPosts + newPosts
-                            hasMorePosts = false
-                            Log.d("MyUserProfileViewModel", "Fine post: ricevuti ${newPosts.size} < $PAGE_SIZE")
-                        }
-                        else -> {
-                            userPosts = userPosts + newPosts
-                            currentMaxPostId = newPosts.last().postId - 1
-
-                            if (currentMaxPostId!! <= 0) {
-                                hasMorePosts = false
-                            }
-
-                            Log.d("MyUserProfileViewModel", "Caricati ${newPosts.size} post. Totale: ${userPosts.size}")
-                        }
-                    }
-                } else {
-                    showError = true
-                    Log.e("MyUserProfileViewModel", "Errore: ${result.exceptionOrNull()?.message}")
-                }
-            } catch (e: Exception) {
-                showError = true
-                Log.e("MyUserProfileViewModel", "Eccezione caricamento post", e)
-            } finally {
-                isLoadingPosts = false
-            }
-        }
-    }
-
-    fun loadMorePosts() {
-        loadUserPosts()
-    }
-
+    /**
+     * Aggiorna i dati del profilo.
+     */
     fun updateProfile(
         newName: String,
         newBio: String,
@@ -172,14 +140,39 @@ class MyUserProfileViewModel(
         }
     }
 
-    fun openEditDialog() { showEditDialog = true }
-    fun closeEditDialog() { showEditDialog = false }
-    fun clearError() { showError = false }
+    /**
+     * Carica altri post (paginazione).
+     */
+    fun loadMorePosts() {
+        paginator.loadMore()
+    }
 
+    /**
+     * Apre il dialog di modifica profilo.
+     */
+    fun openEditDialog() {
+        showEditDialog = true
+    }
+
+    /**
+     * Chiude il dialog di modifica profilo.
+     */
+    fun closeEditDialog() {
+        showEditDialog = false
+    }
+
+    /**
+     * Chiude il dialog di errore.
+     */
+    fun clearError() {
+        showError = false
+    }
+
+    /**
+     * Ricarica tutto dall'inizio.
+     */
     fun refresh() {
-        userPosts = emptyList()
-        currentMaxPostId = 0
-        hasMorePosts = true
+        paginator.reset()
         loadUserInfo()
     }
 }

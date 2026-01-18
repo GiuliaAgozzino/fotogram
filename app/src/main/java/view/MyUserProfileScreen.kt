@@ -1,10 +1,8 @@
 package view
 
-import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
@@ -16,59 +14,52 @@ import androidx.compose.ui.unit.dp
 
 import model.UserResponse
 import viewModel.MyUserProfileViewModel
-import view.common.ErrorDialog
-import view.common.FullscreenImageDialog
-import view.common.rememberImagePicker
+import view.common.CommonDialogs
+import view.common.InfiniteScrollEffect
 import view.common.LoadingIndicator
+import view.common.ProfileHeader
 import view.common.ProfileImage
 import view.common.LimitedTextField
-import view.common.ProfileHeader
-import view.common.PostItem
+import view.common.postItemsWithFooter
+import view.common.rememberImagePicker
 
 import java.text.SimpleDateFormat
 import java.util.*
 
+/**
+ * Schermata del profilo personale dell'utente.
+ * Mostra le info utente, pulsante modifica e lista post.
+ */
 @Composable
 fun MyUserProfileScreen(
     modifier: Modifier = Modifier,
     userProfileViewModel: MyUserProfileViewModel,
+    onNavigateToMap: (postId: Int) -> Unit = {}
 ) {
+    // Stato per immagine fullscreen
     var fullscreenImage by remember { mutableStateOf<String?>(null) }
+
+    // Stato della lista
     val listState = rememberLazyListState()
 
-    // Infinite scroll
-    val lastVisibleIndex = remember {
-        derivedStateOf { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
-    }
+    // Gestione infinite scroll
+    InfiniteScrollEffect(
+        listState = listState,
+        hasMore = userProfileViewModel.hasMorePosts,
+        onLoadMore = { userProfileViewModel.loadMorePosts() },
+        tag = "MyUserProfileScreen"
+    )
 
-    LaunchedEffect(lastVisibleIndex.value) {
-        val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
-        val total = listState.layoutInfo.totalItemsCount
-        val threshold = total - 3
+    // Dialogs (errore + fullscreen image)
+    CommonDialogs(
+        showError = userProfileViewModel.showError,
+        onDismissError = { userProfileViewModel.clearError() },
+        onRetry = { userProfileViewModel.refresh() },
+        fullscreenImage = fullscreenImage,
+        onDismissFullscreen = { fullscreenImage = null }
+    )
 
-        if (lastVisible != null && lastVisible >= threshold && userProfileViewModel.hasMorePosts) {
-            Log.d("MyUserProfileScreen", "Trigger loadMore - lastVisible=$lastVisible, total=$total")
-            userProfileViewModel.loadMorePosts()
-        }
-    }
-
-    // Dialog errore
-    if (userProfileViewModel.showError) {
-        ErrorDialog(
-            onDismiss = { userProfileViewModel.clearError() },
-            onRetry = { userProfileViewModel.refresh() }
-        )
-    }
-
-    // Dialog immagine fullscreen
-    fullscreenImage?.let { image ->
-        FullscreenImageDialog(
-            imageBase64 = image,
-            onDismiss = { fullscreenImage = null }
-        )
-    }
-
-    // Dialog di modifica
+    // Dialog di modifica profilo
     if (userProfileViewModel.showEditDialog && userProfileViewModel.userInfo != null) {
         EditProfileDialog(
             currentUser = userProfileViewModel.userInfo!!,
@@ -82,6 +73,7 @@ fun MyUserProfileScreen(
 
     // Contenuto principale
     when {
+        // Loading iniziale
         userProfileViewModel.isLoading && userProfileViewModel.userInfo == null -> {
             Box(
                 modifier = modifier.fillMaxSize(),
@@ -90,7 +82,7 @@ fun MyUserProfileScreen(
                 LoadingIndicator()
             }
         }
-
+        // Contenuto profilo
         userProfileViewModel.userInfo != null -> {
             LazyColumn(
                 state = listState,
@@ -108,61 +100,24 @@ fun MyUserProfileScreen(
                     )
                 }
 
-                // Post dell'utente
-                items(
-                    items = userProfileViewModel.userPosts,
-                    key = { post -> post.postId }
-                ) { post ->
-                    PostItem(
-                        post = post,
-                        isOwnPost = true,
-                        isAuthorClickable = false,
-                        onAuthorClick = { },
-                        onLocationClick = { /* TODO: navigate to map */ },
-                        onImageClick = { imageBase64 ->
-                            fullscreenImage = imageBase64
-                        }
-                    )
-                }
-
-                // Footer: loading o fine post
-                item(key = "footer") {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        when {
-                            userProfileViewModel.isLoadingPosts -> {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(32.dp)
-                                )
-                            }
-                            !userProfileViewModel.hasMorePosts && userProfileViewModel.userPosts.isNotEmpty() -> {
-                                Text(
-                                    text = "Hai visto tutti i post 🎉",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            !userProfileViewModel.hasMorePosts && userProfileViewModel.userPosts.isEmpty() -> {
-                                Text(
-                                    text = "Nessun post pubblicato",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                }
+                // Post dell'utente con footer
+                postItemsWithFooter(
+                    posts = userProfileViewModel.userPosts,
+                    currentUserId = userProfileViewModel.userInfo?.id, // È il proprio profilo
+                    isAuthorClickable = false, // Siamo già sul profilo
+                    isLoading = userProfileViewModel.isLoadingPosts,
+                    hasMore = userProfileViewModel.hasMorePosts,
+                    onAuthorClick = { }, // Nessuna azione
+                    onLocationClick = onNavigateToMap,
+                    onImageClick = { fullscreenImage = it }
+                )
             }
         }
     }
 }
 
 
-// DIALOG MODIFICA PROFILO
+// ============== DIALOG MODIFICA PROFILO ==============
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -180,6 +135,7 @@ fun EditProfileDialog(
 
     val imagePicker = rememberImagePicker { newPictureBase64 = it }
 
+    // DatePicker dialog
     if (showDatePicker) {
         DatePickerDialogComponent(
             initialDate = dateOfBirth,
@@ -196,6 +152,7 @@ fun EditProfileDialog(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                // Foto profilo
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -210,9 +167,22 @@ fun EditProfileDialog(
                     }
                 }
 
-                LimitedTextField(value = name, onValueChange = { name = it }, label = "Nome", maxLength = 15)
-                LimitedTextField(value = bio, onValueChange = { bio = it }, label = "Bio", maxLength = 100)
+                // Campi di testo
+                LimitedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = "Nome",
+                    maxLength = 15
+                )
 
+                LimitedTextField(
+                    value = bio,
+                    onValueChange = { bio = it },
+                    label = "Bio",
+                    maxLength = 100
+                )
+
+                // Data di nascita
                 DatePickerField(
                     value = dateOfBirth,
                     enabled = !isSaving,
@@ -233,12 +203,18 @@ fun EditProfileDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, enabled = !isSaving) { Text("Annulla") }
+            TextButton(
+                onClick = onDismiss,
+                enabled = !isSaving
+            ) {
+                Text("Annulla")
+            }
         }
     )
 }
 
-// COMPONENTI FORM
+
+// ============== COMPONENTI FORM ==============
 
 @Composable
 fun DatePickerField(
@@ -287,15 +263,20 @@ fun DatePickerDialogComponent(
             TextButton(onClick = {
                 datePickerState.selectedDateMillis?.let { onDateSelected(millisToDateString(it)) }
                 onDismiss()
-            }) { Text("OK") }
+            }) {
+                Text("OK")
+            }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Annulla") }
+            TextButton(onClick = onDismiss) {
+                Text("Annulla")
+            }
         }
     ) {
         DatePicker(state = datePickerState, showModeToggle = false)
     }
 }
+
 
 // ============== HELPER FUNCTIONS ==============
 
@@ -303,7 +284,9 @@ private fun parseDataToMillis(dateString: String): Long? {
     if (dateString.isEmpty()) return null
     return try {
         SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(dateString)?.time
-    } catch (e: Exception) { null }
+    } catch (e: Exception) {
+        null
+    }
 }
 
 private fun millisToDateString(millis: Long): String =
