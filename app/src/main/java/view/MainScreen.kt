@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import repository.ApiRepository
 import viewModel.AppScreen
+import viewModel.CreatePostViewModel
 import viewModel.FeedViewModel
 import viewModel.MainScreenViewModel
 import viewModel.MyUserProfileViewModel
@@ -26,13 +27,18 @@ fun MainScreen(
     val mainScreenViewModel: MainScreenViewModel = viewModel()
     val currentScreen by mainScreenViewModel.currentScreen
 
-
     BackHandler(enabled = currentScreen !is AppScreen.Feed) {
         mainScreenViewModel.navigateTo(AppScreen.Feed)
     }
+
     val userFactory = remember(currentUserId, sessionId) {
         MyUserViewModelFactory(currentUserId, sessionId, apiRepository)
     }
+
+    // ViewModel "persistenti" a livello MainScreen
+    val feedViewModel: FeedViewModel = viewModel(factory = userFactory)
+    val myUserProfileViewModel: MyUserProfileViewModel = viewModel(factory = userFactory)
+    val createPostViewModel: CreatePostViewModel = viewModel(factory = userFactory)
 
     Scaffold(
         bottomBar = {
@@ -48,7 +54,6 @@ fun MainScreen(
         when (val screen = currentScreen) {
 
             is AppScreen.Feed -> {
-                val feedViewModel: FeedViewModel = viewModel(factory = userFactory)
                 FeedScreen(
                     modifier = Modifier.padding(innerPadding),
                     feedViewModel = feedViewModel,
@@ -66,14 +71,16 @@ fun MainScreen(
 
             is AppScreen.CreatePost -> {
                 CreatePostScreen(
+                    createPostViewModel = createPostViewModel,
                     modifier = Modifier.padding(innerPadding),
                     onBackToFeed = { mainScreenViewModel.navigateTo(AppScreen.Feed) },
-
+                    onPostCreated = {
+                        myUserProfileViewModel.refresh()
+                    }
                 )
             }
 
             is AppScreen.MyProfile -> {
-                val myUserProfileViewModel: MyUserProfileViewModel = viewModel(factory = userFactory)
                 MyUserProfileScreen(
                     modifier = Modifier.padding(innerPadding),
                     userProfileViewModel = myUserProfileViewModel
@@ -92,7 +99,13 @@ fun MainScreen(
                 UserProfileScreen(
                     modifier = Modifier.padding(innerPadding),
                     userProfileViewModel = userProfileViewModel,
-                    onBackClick = { mainScreenViewModel.navigateTo(AppScreen.Feed) }
+                    onBackClick = {
+                        if (userProfileViewModel.followChanged) {
+                            feedViewModel.refresh()
+                            userProfileViewModel.resetFollowChanged()
+                        }
+                        mainScreenViewModel.navigateTo(AppScreen.Feed)
+                    }
                 )
             }
 

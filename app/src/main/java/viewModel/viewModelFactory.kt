@@ -35,9 +35,9 @@ class MyUserViewModelFactory(
             modelClass.isAssignableFrom(FeedViewModel::class.java) -> {
                 FeedViewModel(userId, sessionId, apiRepository) as T
             }
-            // modelClass.isAssignableFrom(CreatePostViewModel::class.java) -> {
-            //  CreatePostViewModel(userId, sessionId, apiRepository) as T
-            //}
+             modelClass.isAssignableFrom(CreatePostViewModel::class.java) -> {
+             CreatePostViewModel(userId, sessionId, apiRepository) as T
+            }
             modelClass.isAssignableFrom(MyUserProfileViewModel::class.java) -> {
                 MyUserProfileViewModel(userId, sessionId, apiRepository) as T
             }

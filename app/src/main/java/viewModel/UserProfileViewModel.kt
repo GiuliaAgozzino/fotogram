@@ -43,6 +43,9 @@ class UserProfileViewModel(
     var hasMorePosts by mutableStateOf(true)
         private set
 
+    var followChanged by mutableStateOf(false)
+        private set
+
     // Paginator per la gestione del caricamento post
     private val paginator = PostsPaginator(
         tag = "UserProfileViewModel",
@@ -111,7 +114,13 @@ class UserProfileViewModel(
                         isYourFollowing = !currentlyFollowing,
                         followersCount = (userInfo?.followersCount ?: 0) + if (currentlyFollowing) -1 else 1
                     )
+
+                    userPosts = userPosts.map { post ->
+                        post.copy(isFollowing = !currentlyFollowing)
+                    }
+                    followChanged = true
                     Log.d("UserProfileViewModel", "Follow toggle: ora following = ${!currentlyFollowing}")
+
                 }.onFailure { exception ->
                     showError = true
                     Log.e("UserProfileViewModel", "Errore follow/unfollow", exception)
@@ -136,6 +145,9 @@ class UserProfileViewModel(
     }
 
 
+    fun resetFollowChanged() {
+        followChanged = false
+    }
     fun refresh() {
         paginator.reset()
         loadUserInfo()

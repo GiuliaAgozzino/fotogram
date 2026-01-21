@@ -19,7 +19,7 @@ class MyUserProfileViewModel(
     private val apiRepository: ApiRepository
 ) : ViewModel() {
 
-    // Stati UI - Info utente
+
     var isLoading by mutableStateOf(false)
         private set
 

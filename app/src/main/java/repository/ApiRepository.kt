@@ -1,6 +1,8 @@
 package repository
 
 import model.CreateUserResponse
+import model.LocationResponse
+import model.PostResponse
 import model.PostWithAuthor
 import model.UserResponse
 import repository.api.FollowApi
@@ -47,7 +49,10 @@ class ApiRepository {
     suspend fun unfollowUser(sessionId: String?, targetUserId: Int): Result<Unit> {
         return followApi.unfollow(sessionId, targetUserId)  // ← deve restituire Result<Unit>
     }
-
+    suspend fun  newPost(sessionId: String?, contentText: String, contentPicture: String, location: LocationResponse? = null
+    ): Result<PostResponse> {
+        return  postApi.newPost(sessionId, contentText, contentPicture, location)
+    }
     fun close() {
         ApiClient.close()
     }

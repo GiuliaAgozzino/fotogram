@@ -72,7 +72,9 @@ class PostApi {
             isFollowing = user.isYourFollowing,
             contentPicture = post.contentPicture?: "",
             contentText = post.contentText?: "",
-            hasLocation = post.location != null
+            hasLocation = (post.location != null &&
+                    post.location.latitude != null &&
+                    post.location.longitude != null)
         )
 
 

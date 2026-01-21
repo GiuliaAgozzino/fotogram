@@ -8,27 +8,31 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 
 import view.common.LimitedTextField
 import view.common.rememberImagePicker
+import view.common.ErrorDialog
+import viewModel.CreatePostViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreatePostScreen(
+    createPostViewModel: CreatePostViewModel,
     modifier: Modifier = Modifier,
-    isLoading: Boolean = false,
-    onBackToFeed: () -> Unit
+    onBackToFeed: () -> Unit,
+    onPostCreated: () -> Unit = {}
 ) {
+
+
+
     var contentText by remember { mutableStateOf("") }
     var contentPicture by remember { mutableStateOf<String?>(null) }
 
@@ -36,8 +40,25 @@ fun CreatePostScreen(
         contentPicture = base64
     }
 
-    // Abilita pubblicazione solo se testo e immagine presenti
+    val isLoading = createPostViewModel.isLoading
     val canPublish = contentText.isNotBlank() && contentPicture != null && !isLoading
+
+    // Torna al feed quando il post è creato
+    LaunchedEffect(createPostViewModel.postCreated) {
+        if (createPostViewModel.postCreated) {
+            createPostViewModel.resetPostCreated()
+            onPostCreated()
+            onBackToFeed()
+        }
+    }
+
+    // Dialog errore
+    if (createPostViewModel.showError) {
+        ErrorDialog(
+            onDismiss = { createPostViewModel.clearError() },
+            message = "Errore durante la pubblicazione. Riprova."
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -53,7 +74,7 @@ fun CreatePostScreen(
                 },
                 actions = {
                     TextButton(
-                        onClick = { },
+                        onClick = { createPostViewModel.newPost(contentText, contentPicture!!) },
                         enabled = canPublish
                     ) {
                         if (isLoading) {
@@ -89,7 +110,6 @@ fun CreatePostScreen(
 
             // Immagine
             if (contentPicture != null) {
-                // Mostra immagine selezionata
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -102,11 +122,8 @@ fun CreatePostScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
-
-
                 }
 
-                // Bottone cambia immagine
                 TextButton(
                     onClick = { imagePicker.launch("image/*") },
                     enabled = !isLoading
@@ -114,7 +131,6 @@ fun CreatePostScreen(
                     Text("Cambia immagine")
                 }
             } else {
-                // Placeholder per aggiungere immagine
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -159,6 +175,7 @@ fun CreatePostScreen(
         }
     }
 }
+
 @Composable
 fun Base64Image(
     base64: String,
