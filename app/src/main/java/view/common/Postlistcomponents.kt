@@ -97,7 +97,6 @@ fun LazyListScope.postItemsWithFooter(
             isOwnPost = currentUserId?.let { post.authorId == it } ?: false,
             isAuthorClickable = isAuthorClickable,
             onAuthorClick = onAuthorClick,
-            onLocationClick = onLocationClick,
             onImageClick = onImageClick
         )
     }

@@ -77,7 +77,7 @@ data class PostWithAuthor(
     val isFollowing: Boolean,
     val contentPicture: String,
     val contentText: String?,
-    val hasLocation: Boolean
+    val location: LocationResponse? = null
 )
 
 

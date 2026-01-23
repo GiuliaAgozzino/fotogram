@@ -8,6 +8,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,10 +18,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import model.LocationResponse
 
 import view.common.LimitedTextField
 import view.common.rememberImagePicker
 import view.common.ErrorDialog
+import view.location.LocationPermission
 import viewModel.CreatePostViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,6 +39,9 @@ fun CreatePostScreen(
 
     var contentText by remember { mutableStateOf("") }
     var contentPicture by remember { mutableStateOf<String?>(null) }
+
+    var postLocation by remember { mutableStateOf<LocationResponse?>(null) }
+    var showLocationPicker by remember { mutableStateOf(false) }
 
     val imagePicker = rememberImagePicker { base64 ->
         contentPicture = base64
@@ -60,6 +67,24 @@ fun CreatePostScreen(
         )
     }
 
+    if (showLocationPicker) {
+        LocationPermission(
+            onDismiss = {
+                // L'utente ha chiuso (annullato o permesso negato)
+                showLocationPicker = false
+            },
+            onLocationSelected = { point ->
+                // L'utente ha selezionato una posizione sulla mappa
+                postLocation = LocationResponse(
+                    latitude = point.latitude(),
+                    longitude = point.longitude()
+                )
+                showLocationPicker = false
+            }
+        )
+    }
+
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -74,7 +99,7 @@ fun CreatePostScreen(
                 },
                 actions = {
                     TextButton(
-                        onClick = { createPostViewModel.newPost(contentText, contentPicture!!) },
+                        onClick = { createPostViewModel.newPost(contentText, contentPicture!!, postLocation) },
                         enabled = canPublish
                     ) {
                         if (isLoading) {
@@ -155,6 +180,58 @@ fun CreatePostScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+                }
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = null,
+                            tint = if (postLocation != null)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Text(
+                            text = if (postLocation != null) "Posizione aggiunta" else "Nessuna posizione",
+                            color = if (postLocation != null)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    if (postLocation != null) {
+                        // Se c'è già una posizione, mostra il bottone per rimuoverla
+                        IconButton(
+                            onClick = { postLocation = null },
+                            enabled = !isLoading
+                        ) {
+                            Icon(Icons.Default.Close, contentDescription = "Rimuovi posizione")
+                        }
+                    } else {
+                        // Se non c'è, mostra il bottone per aggiungerla
+                        TextButton(
+                            onClick = { showLocationPicker = true },  // Apre LocationPermission
+                            enabled = !isLoading
+                        ) {
+                            Text("Aggiungi")
+                        }
                     }
                 }
             }

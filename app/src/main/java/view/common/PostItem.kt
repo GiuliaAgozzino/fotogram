@@ -2,6 +2,7 @@ package view.common
 
 import android.graphics.BitmapFactory
 import android.util.Base64
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,17 +37,20 @@ import androidx.compose.ui.unit.dp
 import model.PostWithAuthor
 import androidx.compose.foundation.border
 
+
+// In PostItem.kt
+
 @Composable
 fun PostItem(
     post: PostWithAuthor,
     isOwnPost: Boolean = false,
     isAuthorClickable: Boolean = true,
     onAuthorClick: (authorId: Int) -> Unit,
-    onLocationClick: (postId: Int) -> Unit,
     onImageClick: (imageBase64: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Bordo solo per amici (più spesso)
+    // RIMUOVI: var showMapDialog by remember { mutableStateOf(false) }
+
     val borderModifier = if (post.isFollowing && !isOwnPost) {
         Modifier.border(
             width = 3.dp,
@@ -69,7 +73,7 @@ fun PostItem(
                 .fillMaxWidth()
                 .padding(12.dp)
         ) {
-            // Header con autore - MODIFICATO
+            // Header con autore
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -95,10 +99,9 @@ fun PostItem(
                 )
             }
 
-
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Immagine del post (o placeholder se non valida)
+            // Immagine del post
             PostImage(
                 base64 = post.contentPicture,
                 onClick = { post.contentPicture?.let { onImageClick(it) } },
@@ -109,7 +112,7 @@ fun PostItem(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Footer: testo sopra, posizione sotto a destra
+            // Footer
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -121,30 +124,12 @@ fun PostItem(
                     )
                 }
 
-                // Posizione (sotto, allineata a destra)
-                if (post.hasLocation) {
-                    Row(
-                        modifier = Modifier
-                            .align(Alignment.End)
-                            .padding(top = 8.dp)
-                            .clickable { onLocationClick(post.postId) },
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.LocationOn,
-                            contentDescription = "Posizione",
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = "Mappa",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                // Posizione - USA IL COMPONENTE SEPARATO
+                if (post.location?.latitude != null && post.location.longitude != null) {
+                    Box(modifier = Modifier.align(Alignment.End)) {
+                        PostLocation(post = post)
                     }
                 }
-
             }
         }
     }

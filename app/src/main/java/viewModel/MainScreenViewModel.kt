@@ -8,7 +8,7 @@ sealed class AppScreen {
     object CreatePost : AppScreen()
     object MyProfile : AppScreen()
     data class UserProfile(val userId: Int) : AppScreen()
-    data class PostMap(val postId: Int) : AppScreen()
+
 }
 
 class MainScreenViewModel : ViewModel() {

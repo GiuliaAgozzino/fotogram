@@ -144,7 +144,6 @@ class UserProfileViewModel(
         showError = false
     }
 
-
     fun resetFollowChanged() {
         followChanged = false
     }

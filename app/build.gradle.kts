@@ -54,6 +54,7 @@ dependencies {
     implementation(libs.androidx.compose.foundation.layout)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.foundation)
+    implementation(libs.play.services.location)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -71,4 +72,6 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.compose.material:material-icons-core:1.6.0")
     implementation("androidx.compose.material:material-icons-extended:1.6.0")
+    implementation("com.mapbox.maps:android:11.18.0")
+    implementation("com.mapbox.extension:maps-compose:11.18.0")
 }

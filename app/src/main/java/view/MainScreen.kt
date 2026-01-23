@@ -109,9 +109,6 @@ fun MainScreen(
                 )
             }
 
-            is AppScreen.PostMap -> {
-                // TODO: MapScreen
-            }
         }
     }
 }
