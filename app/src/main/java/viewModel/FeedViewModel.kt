@@ -1,24 +1,22 @@
 package viewModel
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
-import model.PostWithAuthor
 import repository.ApiRepository
-import utils.PostsPaginator
 
 
 class FeedViewModel(
-    private val userId: Int?,
     private val sessionId: String?,
     private val apiRepository: ApiRepository
 ) : ViewModel() {
 
-    // Stati UI
-    var posts by mutableStateOf<List<PostWithAuthor>>(emptyList())
+    // Lista degli ID dei post nel feed
+    var feedPostIds by mutableStateOf<List<Int>>(emptyList())
         private set
 
     var isLoading by mutableStateOf(false)
@@ -40,27 +38,56 @@ class FeedViewModel(
     var firstVisibleItemScrollOffset by mutableStateOf(0)
         private set
 
-    // Paginator per la gestione del caricamento
-    private val paginator = PostsPaginator(
-        tag = "FeedViewModel",
-      //  initialMaxPostId = 11, per vedere solo i post con id <= 10
-        coroutineScope = viewModelScope,
-        onLoadingChange = { isLoading = it },
-        onPostsChange = { posts = it },
-        onHasMoreChange = { hasMorePosts = it },
-        onError = { showError = true },
-        fetchPosts = { maxPostId ->
-            apiRepository.getUserFeed(sessionId, maxPostId = maxPostId)
-        }
-    )
+    // Ultimo ID caricato per paginazione
+    private var currentMaxPostId: Int = 0
+    private val pageSize = 10
 
     init {
-        paginator.loadMore()
+        loadFeed()
     }
 
 
-    fun fetchNewPosts() {
-        paginator.loadMore()
+    fun loadFeed() {
+        if (isLoading || !hasMorePosts) return
+
+        viewModelScope.launch {
+            isLoading = true
+            showError = false
+
+            try {
+                val result = apiRepository.getFeedPostIds(sessionId, currentMaxPostId)
+
+                if (result.isSuccess) {
+                    val newIds = result.getOrNull() ?: emptyList()
+                    Log.d("FeedViewModel", "Ricevuti ${newIds.size} post IDs")
+
+                    when {
+                        newIds.isEmpty() -> {
+                            hasMorePosts = false
+                        }
+                        newIds.size < pageSize -> {
+                            feedPostIds = feedPostIds + newIds
+                            hasMorePosts = false
+                        }
+                        else -> {
+                            feedPostIds = feedPostIds + newIds
+                            currentMaxPostId = newIds.last() - 1
+                            if (currentMaxPostId <= 0) {
+                                hasMorePosts = false
+                            }
+                        }
+                    }
+                } else {
+                    showError = true
+                    Log.e("FeedViewModel", "Errore caricamento feed", result.exceptionOrNull())
+                }
+            } catch (e: Exception) {
+                showError = true
+                Log.e("FeedViewModel", "Eccezione", e)
+            } finally {
+                isLoading = false
+            }
+        }
     }
 
 
@@ -69,18 +96,18 @@ class FeedViewModel(
 
         viewModelScope.launch {
             isRefreshing = true
-            paginator.reset()
-            paginator.loadMore()
+            feedPostIds = emptyList()
+            currentMaxPostId = 0
+            hasMorePosts = true
+            loadFeed()
             isRefreshing = false
         }
     }
-
 
     fun saveScrollState(index: Int, offset: Int) {
         firstVisibleItemIndex = index
         firstVisibleItemScrollOffset = offset
     }
-
 
     fun clearError() {
         showError = false

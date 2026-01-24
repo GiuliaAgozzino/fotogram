@@ -16,12 +16,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.mapbox.geojson.Point
 import utils.LocationManager
-import model.PostWithAuthor
+import model.Post
 import view.location.RequestLocationPermission
-import  view.locationDialog.LocationViewerDialog
+import view.locationDialog.LocationViewerDialog
+
 @SuppressLint("MissingPermission")
 @Composable
-fun PostLocation(post: PostWithAuthor) {
+fun PostLocationButton(post: Post) {
     // Se non c'è location, non mostrare nulla
     if (post.location?.latitude == null || post.location.longitude == null) {
         return
@@ -29,8 +30,8 @@ fun PostLocation(post: PostWithAuthor) {
 
     val context = LocalContext.current
     val locationManager = remember { LocationManager(context) }
-     // Stati per la posizione utente
 
+    // Stati per la posizione utente
     var userLocation by remember { mutableStateOf<Point?>(null) }
     var isNear by remember { mutableStateOf<Boolean?>(null) }
     var distanceKm by remember { mutableStateOf<Double?>(null) }
@@ -68,18 +69,17 @@ fun PostLocation(post: PostWithAuthor) {
     if (requestPermission) {
         RequestLocationPermission(
             onGranted = {
-                Log.d("PostLocation", "Permesso concesso")
+                Log.d("PostLocationButton", "Permesso concesso")
                 permissionGranted = true
                 requestPermission = false
             },
             onDenied = {
-                Log.d("PostLocation", "Permesso negato")
+                Log.d("PostLocationButton", "Permesso negato")
                 permissionGranted = false
                 requestPermission = false
-                // Mostra comunque la mappa, ma senza posizione utente
             },
             onDeniedForever = {
-                Log.d("PostLocation", "Permesso negato per sempre")
+                Log.d("PostLocationButton", "Permesso negato per sempre")
                 permissionGranted = false
                 requestPermission = false
             }
@@ -92,16 +92,17 @@ fun PostLocation(post: PostWithAuthor) {
 
         locationManager.getCurrentLocation { lon, lat ->
             userLocation = Point.fromLngLat(lon, lat)
-            Log.d("PostLocation", "${userLocation}")
+            Log.d("PostLocationButton", "User location: $userLocation")
+
             // Calcola distanza dal post
             val distance = locationManager.distanceInKm(
                 lat, lon,
-                  post.location.latitude, post.location.longitude
+                post.location.latitude, post.location.longitude
             )
             distanceKm = distance
-            isNear = distance <= 5.0  // Considera "vicino" se entro 5km
+            isNear = distance <= 5.0
 
-            Log.d("PostLocation", "Distanza: $distance km, isNear: $isNear")
+            Log.d("PostLocationButton", "Distanza: $distance km, isNear: $isNear")
         }
     }
 
@@ -119,4 +120,3 @@ fun PostLocation(post: PostWithAuthor) {
         )
     }
 }
-

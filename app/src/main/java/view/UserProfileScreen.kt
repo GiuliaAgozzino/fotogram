@@ -2,6 +2,7 @@ package view
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -10,26 +11,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import view.common.CommonDialogs
-import view.common.InfiniteScrollEffect
-import view.common.LoadingIndicator
-import view.common.ProfileHeader
-import view.common.postItemsWithFooter
+import view.common.*
+import viewModel.DataViewModel
 import viewModel.UserProfileViewModel
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserProfileScreen(
     modifier: Modifier = Modifier,
     userProfileViewModel: UserProfileViewModel,
-    onBackClick: () -> Unit,
-    onNavigateToMap: (postId: Int) -> Unit = {}
+    dataViewModel: DataViewModel,
+    onBackClick: () -> Unit
 ) {
-    // Stato per immagine fullscreen
     var fullscreenImage by remember { mutableStateOf<String?>(null) }
-
-    // Stato della lista
     val listState = rememberLazyListState()
 
     // Carica i dati all'avvio
@@ -45,7 +39,7 @@ fun UserProfileScreen(
         tag = "UserProfileScreen"
     )
 
-    // Dialogs (errore + fullscreen image)
+    // Dialogs
     CommonDialogs(
         showError = userProfileViewModel.showError,
         onDismissError = { userProfileViewModel.clearError() },
@@ -73,7 +67,6 @@ fun UserProfileScreen(
     ) { innerPadding ->
 
         when {
-            // Loading iniziale
             userProfileViewModel.isLoading && userProfileViewModel.userInfo == null -> {
                 Box(
                     modifier = modifier
@@ -84,7 +77,6 @@ fun UserProfileScreen(
                     LoadingIndicator()
                 }
             }
-            // Contenuto profilo
             userProfileViewModel.userInfo != null -> {
                 LazyColumn(
                     state = listState,
@@ -94,7 +86,6 @@ fun UserProfileScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Header del profilo
                     item(key = "profile_header") {
                         ProfileHeader(
                             user = userProfileViewModel.userInfo!!,
@@ -102,23 +93,74 @@ fun UserProfileScreen(
                             showFollowButton = true,
                             isFollowing = userProfileViewModel.userInfo!!.isYourFollowing,
                             isFollowLoading = userProfileViewModel.isFollowLoading,
-                            onFollowClick = { userProfileViewModel.toggleFollow() }
+                            onFollowClick = { userProfileViewModel.toggleFollow(dataViewModel) }
                         )
                     }
 
-                    // Post dell'utente con footer
-                    postItemsWithFooter(
-                        posts = userProfileViewModel.userPosts,
-                        currentUserId = null,
-                        isAuthorClickable = false,
-                        isLoading = userProfileViewModel.isLoadingPosts,
-                        hasMore = userProfileViewModel.hasMorePosts,
-                        onAuthorClick = { },
-                        onLocationClick = onNavigateToMap,
-                        onImageClick = { fullscreenImage = it }
-                    )
+                    items(
+                        items = userProfileViewModel.userPostIds,
+                        key = { it }
+                    ) { postId ->
+                        UserProfilePostItem(
+                            postId = postId,
+                            dataViewModel = dataViewModel,
+                            onImageClick = { fullscreenImage = it }
+                        )
+                    }
+
+                    item(key = "footer") {
+                        PostListFooter(
+                            isLoading = userProfileViewModel.isLoadingPosts,
+                            hasMore = userProfileViewModel.hasMorePosts,
+                            isEmpty = userProfileViewModel.userPostIds.isEmpty()
+                        )
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun UserProfilePostItem(
+    postId: Int,
+    dataViewModel: DataViewModel,
+    onImageClick: (String) -> Unit
+) {
+    val post = dataViewModel.posts[postId]
+    val author = post?.let { dataViewModel.authors[it.authorId] }
+
+    LaunchedEffect(postId, post) {
+        if (post == null) {
+            dataViewModel.loadPost(postId)
+        }
+        if (post != null && author == null) {
+            dataViewModel.loadAuthor(post.authorId)
+        }
+    }
+
+    if (post == null || author == null) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .padding(8.dp)
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+    } else {
+        PostItem(
+            post = post,
+            author = author,
+            isOwnPost = false,
+            isAuthorClickable = false,
+            onAuthorClick = { },
+            onImageClick = onImageClick
+        )
     }
 }

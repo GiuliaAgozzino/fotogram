@@ -7,11 +7,11 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
-import model.LocationResponse
+import model.LocationData
+import model.Post
 import repository.ApiRepository
 
 class CreatePostViewModel(
-    private val userId: Int?,
     private val sessionId: String?,
     private val apiRepository: ApiRepository
 ) : ViewModel() {
@@ -25,10 +25,14 @@ class CreatePostViewModel(
     var postCreated by mutableStateOf(false)
         private set
 
+    // Post appena creato (per aggiungerlo al DataViewModel)
+    var createdPost by mutableStateOf<Post?>(null)
+        private set
+
     fun newPost(
         text: String,
         picture: String,
-        location: LocationResponse? = null
+        location: LocationData? = null
     ) {
         viewModelScope.launch {
             isLoading = true
@@ -39,15 +43,16 @@ class CreatePostViewModel(
                     sessionId = sessionId,
                     contentText = text,
                     contentPicture = picture,
-                    location = location,
+                    location = location
                 )
 
                 if (result.isSuccess) {
-                    Log.d("CreatePostViewModel", "Post creato con successo")
+                    createdPost = result.getOrNull()
                     postCreated = true
+                    Log.d("CreatePostViewModel", "Post creato con successo: ${createdPost?.id}")
                 } else {
                     showError = true
-                    Log.e("CreatePostViewModel", "Errore caricamento", result.exceptionOrNull())
+                    Log.e("CreatePostViewModel", "Errore creazione", result.exceptionOrNull())
                 }
             } catch (e: Exception) {
                 showError = true
@@ -64,5 +69,6 @@ class CreatePostViewModel(
 
     fun resetPostCreated() {
         postCreated = false
+        createdPost = null
     }
 }

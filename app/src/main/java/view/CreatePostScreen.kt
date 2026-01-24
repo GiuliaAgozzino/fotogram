@@ -18,29 +18,28 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import model.LocationResponse
+import model.LocationData
 
 import view.common.LimitedTextField
 import view.common.rememberImagePicker
 import view.common.ErrorDialog
 import view.location.LocationPermission
 import viewModel.CreatePostViewModel
+import viewModel.DataViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreatePostScreen(
     createPostViewModel: CreatePostViewModel,
+    dataViewModel: DataViewModel,
     modifier: Modifier = Modifier,
     onBackToFeed: () -> Unit,
     onPostCreated: () -> Unit = {}
 ) {
-
-
-
     var contentText by remember { mutableStateOf("") }
     var contentPicture by remember { mutableStateOf<String?>(null) }
 
-    var postLocation by remember { mutableStateOf<LocationResponse?>(null) }
+    var postLocation by remember { mutableStateOf<LocationData?>(null) }
     var showLocationPicker by remember { mutableStateOf(false) }
 
     val imagePicker = rememberImagePicker { base64 ->
@@ -53,6 +52,10 @@ fun CreatePostScreen(
     // Torna al feed quando il post è creato
     LaunchedEffect(createPostViewModel.postCreated) {
         if (createPostViewModel.postCreated) {
+            // Aggiungi il post al DataViewModel
+            createPostViewModel.createdPost?.let { post ->
+                dataViewModel.addPost(post)
+            }
             createPostViewModel.resetPostCreated()
             onPostCreated()
             onBackToFeed()
@@ -69,13 +72,9 @@ fun CreatePostScreen(
 
     if (showLocationPicker) {
         LocationPermission(
-            onDismiss = {
-                // L'utente ha chiuso (annullato o permesso negato)
-                showLocationPicker = false
-            },
+            onDismiss = { showLocationPicker = false },
             onLocationSelected = { point ->
-                // L'utente ha selezionato una posizione sulla mappa
-                postLocation = LocationResponse(
+                postLocation = LocationData(
                     latitude = point.latitude(),
                     longitude = point.longitude()
                 )
@@ -84,16 +83,15 @@ fun CreatePostScreen(
         )
     }
 
-
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Create Post") },
+                title = { Text("Nuovo Post") },
                 navigationIcon = {
                     IconButton(onClick = onBackToFeed, enabled = !isLoading) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back to Feed"
+                            contentDescription = "Indietro"
                         )
                     }
                 },
@@ -184,9 +182,8 @@ fun CreatePostScreen(
                 }
             }
 
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            // Card posizione
+            Card(modifier = Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -217,7 +214,6 @@ fun CreatePostScreen(
                     }
 
                     if (postLocation != null) {
-                        // Se c'è già una posizione, mostra il bottone per rimuoverla
                         IconButton(
                             onClick = { postLocation = null },
                             enabled = !isLoading
@@ -225,9 +221,8 @@ fun CreatePostScreen(
                             Icon(Icons.Default.Close, contentDescription = "Rimuovi posizione")
                         }
                     } else {
-                        // Se non c'è, mostra il bottone per aggiungerla
                         TextButton(
-                            onClick = { showLocationPicker = true },  // Apre LocationPermission
+                            onClick = { showLocationPicker = true },
                             enabled = !isLoading
                         ) {
                             Text("Aggiungi")

@@ -1,10 +1,11 @@
-// AuthViewModelFactory.kt
 package viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import repository.ApiRepository
 import repository.SettingsRepository
+
+// ==================== AUTH ====================
 
 class AuthViewModelFactory(
     private val settingsRepository: SettingsRepository,
@@ -24,41 +25,79 @@ class AuthViewModelFactory(
     }
 }
 
-class MyUserViewModelFactory(
+// ==================== DATA (condiviso) ====================
+
+class DataViewModelFactory(
+    private val apiRepository: ApiRepository,
+    private val sessionId: String?
+) : ViewModelProvider.Factory {
+
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(DataViewModel::class.java)) {
+            return DataViewModel(apiRepository, sessionId) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+    }
+}
+
+// ==================== FEED ====================
+
+class FeedViewModelFactory(
+    private val sessionId: String?,
+    private val apiRepository: ApiRepository
+) : ViewModelProvider.Factory {
+
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(FeedViewModel::class.java)) {
+            return FeedViewModel(sessionId, apiRepository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+    }
+}
+
+// ==================== CREATE POST ====================
+
+class CreatePostViewModelFactory(
+    private val sessionId: String?,
+    private val apiRepository: ApiRepository
+) : ViewModelProvider.Factory {
+
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(CreatePostViewModel::class.java)) {
+            return CreatePostViewModel(sessionId, apiRepository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+    }
+}
+
+// ==================== MY USER PROFILE ====================
+
+class MyUserProfileViewModelFactory(
     private val userId: Int?,
     private val sessionId: String?,
     private val apiRepository: ApiRepository
 ) : ViewModelProvider.Factory {
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return when {
-            modelClass.isAssignableFrom(FeedViewModel::class.java) -> {
-                FeedViewModel(userId, sessionId, apiRepository) as T
-            }
-             modelClass.isAssignableFrom(CreatePostViewModel::class.java) -> {
-             CreatePostViewModel(userId, sessionId, apiRepository) as T
-            }
-            modelClass.isAssignableFrom(MyUserProfileViewModel::class.java) -> {
-                MyUserProfileViewModel(userId, sessionId, apiRepository) as T
-            }
-            else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+        if (modelClass.isAssignableFrom(MyUserProfileViewModel::class.java)) {
+            return MyUserProfileViewModel(userId, sessionId, apiRepository) as T
         }
+        throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
     }
 }
 
+// ==================== USER PROFILE ====================
+
 class UserProfileViewModelFactory(
-    private val targetUserId: Int,      // L'utente da visualizzare
-    private val sessionId: String?,     // Sessione dell'utente loggato
+    private val targetUserId: Int,
+    private val sessionId: String?,
     private val apiRepository: ApiRepository
 ) : ViewModelProvider.Factory {
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return when {
-            modelClass.isAssignableFrom(UserProfileViewModel::class.java) -> {
-                UserProfileViewModel(targetUserId, sessionId, apiRepository) as T
-            }
-
-            else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+        if (modelClass.isAssignableFrom(UserProfileViewModel::class.java)) {
+            return UserProfileViewModel(targetUserId, sessionId, apiRepository) as T
         }
+        throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
     }
 }

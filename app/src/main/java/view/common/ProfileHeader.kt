@@ -1,32 +1,18 @@
 package view.common
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import model.UserResponse
+import model.User
 
 @Composable
 fun ProfileHeader(
-    user: UserResponse,
+    user: User,
     showEditButton: Boolean = false,
     showFollowButton: Boolean = false,
     isFollowing: Boolean = false,
@@ -42,7 +28,10 @@ fun ProfileHeader(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = user.username ?: "utente sconosciuto", style = MaterialTheme.typography.headlineMedium)
+        Text(
+            text = user.username ?: "utente sconosciuto",
+            style = MaterialTheme.typography.headlineMedium
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -130,7 +119,7 @@ fun ProfileHeader(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Post di ${user.username?: "utente sconosciuto"}",
+            text = "Post di ${user.username ?: "utente sconosciuto"}",
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier
                 .fillMaxWidth()

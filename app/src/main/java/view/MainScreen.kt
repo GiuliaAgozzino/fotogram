@@ -9,14 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import repository.ApiRepository
-import viewModel.AppScreen
-import viewModel.CreatePostViewModel
-import viewModel.FeedViewModel
-import viewModel.MainScreenViewModel
-import viewModel.MyUserProfileViewModel
-import viewModel.MyUserViewModelFactory
-import viewModel.UserProfileViewModel
-import viewModel.UserProfileViewModelFactory
+import viewModel.*
 
 @Composable
 fun MainScreen(
@@ -31,14 +24,24 @@ fun MainScreen(
         mainScreenViewModel.navigateTo(AppScreen.Feed)
     }
 
-    val userFactory = remember(currentUserId, sessionId) {
-        MyUserViewModelFactory(currentUserId, sessionId, apiRepository)
+    // DataViewModel condiviso (Single Source of Truth per Post e User)
+    val dataViewModel: DataViewModel = viewModel(
+        factory = DataViewModelFactory(apiRepository, sessionId)
+    )
+
+    // Factory per i ViewModel che necessitano di sessionId
+    val feedViewModelFactory = remember(sessionId) {
+        FeedViewModelFactory(sessionId, apiRepository)
     }
 
-    // ViewModel "persistenti" a livello MainScreen
-    val feedViewModel: FeedViewModel = viewModel(factory = userFactory)
-    val myUserProfileViewModel: MyUserProfileViewModel = viewModel(factory = userFactory)
-    val createPostViewModel: CreatePostViewModel = viewModel(factory = userFactory)
+    // ViewModel persistenti a livello MainScreen
+    val feedViewModel: FeedViewModel = viewModel(factory = feedViewModelFactory)
+    val createPostViewModel: CreatePostViewModel = viewModel(
+        factory = CreatePostViewModelFactory(sessionId, apiRepository)
+    )
+    val myUserProfileViewModel: MyUserProfileViewModel = viewModel(
+        factory = MyUserProfileViewModelFactory(currentUserId, sessionId, apiRepository)
+    )
 
     Scaffold(
         bottomBar = {
@@ -57,6 +60,7 @@ fun MainScreen(
                 FeedScreen(
                     modifier = Modifier.padding(innerPadding),
                     feedViewModel = feedViewModel,
+                    dataViewModel = dataViewModel,
                     currentUserId = currentUserId,
                     onNavigateToProfile = { userId ->
                         if (userId == currentUserId) {
@@ -64,18 +68,19 @@ fun MainScreen(
                         } else {
                             mainScreenViewModel.navigateTo(AppScreen.UserProfile(userId))
                         }
-                    },
-                    onNavigateToMap = { }
+                    }
                 )
             }
 
             is AppScreen.CreatePost -> {
                 CreatePostScreen(
                     createPostViewModel = createPostViewModel,
+                    dataViewModel = dataViewModel,
                     modifier = Modifier.padding(innerPadding),
                     onBackToFeed = { mainScreenViewModel.navigateTo(AppScreen.Feed) },
                     onPostCreated = {
                         myUserProfileViewModel.refresh()
+                        feedViewModel.refresh()
                     }
                 )
             }
@@ -83,22 +88,21 @@ fun MainScreen(
             is AppScreen.MyProfile -> {
                 MyUserProfileScreen(
                     modifier = Modifier.padding(innerPadding),
-                    userProfileViewModel = myUserProfileViewModel
+                    userProfileViewModel = myUserProfileViewModel,
+                    dataViewModel = dataViewModel
                 )
             }
 
             is AppScreen.UserProfile -> {
-                val userProfileFactory = remember(screen.userId) {
-                    UserProfileViewModelFactory(screen.userId, sessionId, apiRepository)
-                }
                 val userProfileViewModel: UserProfileViewModel = viewModel(
                     key = "user_${screen.userId}",
-                    factory = userProfileFactory
+                    factory = UserProfileViewModelFactory(screen.userId, sessionId, apiRepository)
                 )
 
                 UserProfileScreen(
                     modifier = Modifier.padding(innerPadding),
                     userProfileViewModel = userProfileViewModel,
+                    dataViewModel = dataViewModel,
                     onBackClick = {
                         if (userProfileViewModel.followChanged) {
                             feedViewModel.refresh()
@@ -108,7 +112,6 @@ fun MainScreen(
                     }
                 )
             }
-
         }
     }
 }

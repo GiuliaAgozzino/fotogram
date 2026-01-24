@@ -3,6 +3,7 @@ package view
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
@@ -11,33 +12,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-
-import model.UserResponse
+import model.User
+import view.common.*
+import viewModel.DataViewModel
 import viewModel.MyUserProfileViewModel
-import view.common.CommonDialogs
-import view.common.InfiniteScrollEffect
-import view.common.LoadingIndicator
-import view.common.ProfileHeader
-import view.common.ProfileImage
-import view.common.LimitedTextField
-import view.common.postItemsWithFooter
-import view.common.rememberImagePicker
-
 import java.text.SimpleDateFormat
 import java.util.*
-
-
 
 @Composable
 fun MyUserProfileScreen(
     modifier: Modifier = Modifier,
     userProfileViewModel: MyUserProfileViewModel,
-    onNavigateToMap: (postId: Int) -> Unit = {}
+    dataViewModel: DataViewModel
 ) {
-    // Stato per immagine fullscreen
     var fullscreenImage by remember { mutableStateOf<String?>(null) }
-
-    // Stato della lista
     val listState = rememberLazyListState()
 
     // Gestione infinite scroll
@@ -48,7 +36,7 @@ fun MyUserProfileScreen(
         tag = "MyUserProfileScreen"
     )
 
-    // Dialogs (errore + fullscreen image)
+    // Dialogs
     CommonDialogs(
         showError = userProfileViewModel.showError,
         onDismissError = { userProfileViewModel.clearError() },
@@ -69,9 +57,7 @@ fun MyUserProfileScreen(
         )
     }
 
-    // Contenuto principale
     when {
-        // Loading iniziale
         userProfileViewModel.isLoading && userProfileViewModel.userInfo == null -> {
             Box(
                 modifier = modifier.fillMaxSize(),
@@ -80,7 +66,6 @@ fun MyUserProfileScreen(
                 LoadingIndicator()
             }
         }
-        // Contenuto profilo
         userProfileViewModel.userInfo != null -> {
             LazyColumn(
                 state = listState,
@@ -88,7 +73,6 @@ fun MyUserProfileScreen(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Header del profilo
                 item(key = "profile_header") {
                     ProfileHeader(
                         user = userProfileViewModel.userInfo!!,
@@ -98,34 +82,125 @@ fun MyUserProfileScreen(
                     )
                 }
 
-                // Post dell'utente con footer
-                postItemsWithFooter(
-                    posts = userProfileViewModel.userPosts,
-                    currentUserId = userProfileViewModel.userInfo?.id, // È il proprio profilo
-                    isAuthorClickable = false, // Siamo già sul profilo
-                    isLoading = userProfileViewModel.isLoadingPosts,
-                    hasMore = userProfileViewModel.hasMorePosts,
-                    onAuthorClick = { }, // Nessuna azione
-                    onLocationClick = onNavigateToMap,
-                    onImageClick = { fullscreenImage = it }
+                items(
+                    items = userProfileViewModel.userPostIds,
+                    key = { it }
+                ) { postId ->
+                    ProfilePostItem(
+                        postId = postId,
+                        dataViewModel = dataViewModel,
+                        currentUserId = userProfileViewModel.userInfo?.id,
+                        onImageClick = { fullscreenImage = it }
+                    )
+                }
+
+                item(key = "footer") {
+                    PostListFooter(
+                        isLoading = userProfileViewModel.isLoadingPosts,
+                        hasMore = userProfileViewModel.hasMorePosts,
+                        isEmpty = userProfileViewModel.userPostIds.isEmpty()
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Post item per la schermata profilo (autore non cliccabile).
+ */
+@Composable
+fun ProfilePostItem(
+    postId: Int,
+    dataViewModel: DataViewModel,
+    currentUserId: Int?,
+    onImageClick: (String) -> Unit
+) {
+    val post = dataViewModel.posts[postId]
+    val author = post?.let { dataViewModel.authors[it.authorId] }
+
+    LaunchedEffect(postId, post) {
+        if (post == null) {
+            dataViewModel.loadPost(postId)
+        }
+        if (post != null && author == null) {
+            dataViewModel.loadAuthor(post.authorId)
+        }
+    }
+
+    if (post == null || author == null) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .padding(8.dp)
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+    } else {
+        PostItem(
+            post = post,
+            author = author,
+            isOwnPost = currentUserId?.let { post.authorId == it } ?: false,
+            isAuthorClickable = false,
+            onAuthorClick = { },
+            onImageClick = onImageClick
+        )
+    }
+}
+
+@Composable
+fun PostListFooter(
+    isLoading: Boolean,
+    hasMore: Boolean,
+    isEmpty: Boolean,
+    emptyMessage: String = "Nessun post pubblicato",
+    endMessage: String = "Hai visto tutti i post 🎉"
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        when {
+            isLoading -> {
+                CircularProgressIndicator(modifier = Modifier.size(32.dp))
+            }
+            !hasMore && !isEmpty -> {
+                Text(
+                    text = endMessage,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            !hasMore && isEmpty -> {
+                Text(
+                    text = emptyMessage,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
     }
 }
 
-
-// ============== DIALOG MODIFICA PROFILO ==============
+// ==================== DIALOG MODIFICA PROFILO ====================
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileDialog(
-    currentUser: UserResponse,
+    currentUser: User,
     isSaving: Boolean,
     onDismiss: () -> Unit,
     onSave: (name: String, bio: String, dateOfBirth: String, picture: String?) -> Unit
 ) {
-    var name by remember { mutableStateOf(currentUser.username ?: "utente sconosciuto") }
+    var name by remember { mutableStateOf(currentUser.username ?: "") }
     var bio by remember { mutableStateOf(currentUser.bio ?: "") }
     var dateOfBirth by remember { mutableStateOf(currentUser.dateOfBirth ?: "") }
     var newPictureBase64 by remember { mutableStateOf<String?>(null) }
@@ -133,7 +208,6 @@ fun EditProfileDialog(
 
     val imagePicker = rememberImagePicker { newPictureBase64 = it }
 
-    // DatePicker dialog
     if (showDatePicker) {
         DatePickerDialogComponent(
             initialDate = dateOfBirth,
@@ -150,7 +224,6 @@ fun EditProfileDialog(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Foto profilo
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -165,7 +238,6 @@ fun EditProfileDialog(
                     }
                 }
 
-                // Campi di testo
                 LimitedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -180,7 +252,6 @@ fun EditProfileDialog(
                     maxLength = 100
                 )
 
-                // Data di nascita
                 DatePickerField(
                     value = dateOfBirth,
                     enabled = !isSaving,
@@ -201,18 +272,12 @@ fun EditProfileDialog(
             }
         },
         dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                enabled = !isSaving
-            ) {
+            TextButton(onClick = onDismiss, enabled = !isSaving) {
                 Text("Annulla")
             }
         }
     )
 }
-
-
-// ============== COMPONENTI FORM ==============
 
 @Composable
 fun DatePickerField(
@@ -274,9 +339,6 @@ fun DatePickerDialogComponent(
         DatePicker(state = datePickerState, showModeToggle = false)
     }
 }
-
-
-// ============== HELPER FUNCTIONS ==============
 
 private fun parseDataToMillis(dateString: String): Long? {
     if (dateString.isEmpty()) return null

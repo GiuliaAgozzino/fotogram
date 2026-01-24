@@ -113,26 +113,26 @@ fun LocationViewerDialog(
                 ) {
                     if (distanceKm == null || isNear == null || userLocation == null) {
                         Text(
-                            text = "📍 Post location",
+                            text = "Calcolo...",
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Medium,
                             color = Color(0xFF081D85)
                         )
                     } else if (!isNear) {
                         Text(
-                            text = "⚠️ You're too far away",
+                            text = "Sei troppo lontano",
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFFD32F2F)
                         )
                         Text(
-                            text = "Must be within 5 km",
+                            text = "Devi essere entro 5 km",
                             style = MaterialTheme.typography.bodySmall,
                             color = Color(0xFF757575)
                         )
                     } else {
                         Text(
-                            text = "✨ You're nearby!",
+                            text = "Yei sei vicino!",
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF2E7D32)

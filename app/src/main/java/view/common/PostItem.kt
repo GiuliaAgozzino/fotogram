@@ -2,29 +2,15 @@ package view.common
 
 import android.graphics.BitmapFactory
 import android.util.Base64
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BrokenImage
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -34,24 +20,25 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import model.PostWithAuthor
-import androidx.compose.foundation.border
+import model.Post
+import model.User
 
-
-// In PostItem.kt
-
+/**
+ * Componente per mostrare un singolo post.
+ * Riceve Post e User come parametri separati (approccio V2).
+ */
 @Composable
 fun PostItem(
-    post: PostWithAuthor,
+    post: Post,
+    author: User,
     isOwnPost: Boolean = false,
     isAuthorClickable: Boolean = true,
     onAuthorClick: (authorId: Int) -> Unit,
     onImageClick: (imageBase64: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // RIMUOVI: var showMapDialog by remember { mutableStateOf(false) }
-
-    val borderModifier = if (post.isFollowing && !isOwnPost) {
+    // Bordo colorato per i post degli utenti seguiti
+    val borderModifier = if (author.isYourFollowing && !isOwnPost) {
         Modifier.border(
             width = 3.dp,
             color = MaterialTheme.colorScheme.primary,
@@ -88,12 +75,12 @@ fun PostItem(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 ProfileImage(
-                    base64 = post.authorPicture,
+                    base64 = author.profilePicture,
                     size = 40.dp
                 )
 
                 Text(
-                    text = post.authorName ?: "utente sconosciuto",
+                    text = author.username ?: "utente sconosciuto",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -104,7 +91,7 @@ fun PostItem(
             // Immagine del post
             PostImage(
                 base64 = post.contentPicture,
-                onClick = { post.contentPicture?.let { onImageClick(it) } },
+                onClick = { onImageClick(post.contentPicture) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(300.dp)
@@ -124,10 +111,10 @@ fun PostItem(
                     )
                 }
 
-                // Posizione - USA IL COMPONENTE SEPARATO
+                // Posizione
                 if (post.location?.latitude != null && post.location.longitude != null) {
                     Box(modifier = Modifier.align(Alignment.End)) {
-                        PostLocation(post = post)
+                        PostLocationButton(post = post)
                     }
                 }
             }
@@ -164,12 +151,11 @@ fun PostImage(
         if (bitmap != null) {
             Image(
                 bitmap = bitmap.asImageBitmap(),
-                contentDescription = "Post image",
+                contentDescription = "Immagine post",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
         } else {
-            //  immagine mancante/non valida
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center

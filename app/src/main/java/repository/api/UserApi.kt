@@ -13,7 +13,7 @@ import io.ktor.http.contentType
 import model.CreateUserResponse
 import model.UpdateImageRequest
 import model.UpdateUserRequest
-import model.UserResponse
+import model.User
 import repository.ApiClient
 
 class UserApi {
@@ -21,7 +21,7 @@ class UserApi {
     private val client = ApiClient.httpClient
     private val baseUrl = ApiClient.BASE_URL
 
-    // ============== AUTH ==============
+    // ==================== AUTH ====================
 
     suspend fun register(username: String, pictureBase64: String): Result<CreateUserResponse> {
         // Step 1: Crea utente
@@ -71,9 +71,9 @@ class UserApi {
         }
     }
 
-    // ============== PROFILO ==============
+    // ==================== PROFILO ====================
 
-    suspend fun getUserInfo(sessionId: String?, userId: Int?): Result<UserResponse> {
+    suspend fun getUserInfo(sessionId: String?, userId: Int?): Result<User> {
         return try {
             Log.d("UserApi", "Caricamento profilo: userId=$userId")
 
@@ -83,8 +83,8 @@ class UserApi {
             }
 
             if (response.status.value == 200) {
-                val body: UserResponse = response.body()
-                Log.d("UserApi", "Profilo caricato: ${body.username} post count ${body.postsCount} following count ${body.followingCount}")
+                val body: User = response.body()
+                Log.d("UserApi", "Profilo caricato: ${body.username}")
                 Result.success(body)
             } else {
                 Log.e("UserApi", "Errore caricamento profilo: ${response.status.value}")
@@ -102,7 +102,7 @@ class UserApi {
         bio: String?,
         dateOfBirth: String?,
         newPicture: String?
-    ): Result<UserResponse> {
+    ): Result<User> {
         if (sessionId == null) {
             return Result.failure(Exception("Session ID mancante"))
         }
@@ -123,14 +123,14 @@ class UserApi {
         }
     }
 
-    // ============== HELPER PRIVATI ==============
+    // ==================== HELPER PRIVATI ====================
 
     private suspend fun updateUserInfo(
         sessionId: String,
         username: String,
         bio: String?,
         dateOfBirth: String?
-    ): Result<UserResponse> {
+    ): Result<User> {
         return try {
             val response: HttpResponse = client.put("$baseUrl/user") {
                 contentType(ContentType.Application.Json)
@@ -151,7 +151,7 @@ class UserApi {
         }
     }
 
-    private suspend fun updateUserImage(sessionId: String, base64Image: String): Result<UserResponse> {
+    private suspend fun updateUserImage(sessionId: String, base64Image: String): Result<User> {
         return try {
             val response: HttpResponse = client.put("$baseUrl/user/image") {
                 contentType(ContentType.Application.Json)

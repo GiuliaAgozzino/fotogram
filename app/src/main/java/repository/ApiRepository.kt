@@ -1,10 +1,9 @@
 package repository
 
 import model.CreateUserResponse
-import model.LocationResponse
-import model.PostResponse
-import model.PostWithAuthor
-import model.UserResponse
+import model.LocationData
+import model.Post
+import model.User
 import repository.api.FollowApi
 import repository.api.PostApi
 import repository.api.UserApi
@@ -15,12 +14,13 @@ class ApiRepository {
     private val postApi = PostApi()
     private val followApi = FollowApi()
 
-    // User
+    // ==================== USER ====================
+
     suspend fun register(username: String, pictureBase64: String): Result<CreateUserResponse> {
         return userApi.register(username, pictureBase64)
     }
 
-    suspend fun getUserInfo(sessionId: String?, userId: Int?): Result<UserResponse> {
+    suspend fun getUserInfo(sessionId: String?, userId: Int?): Result<User> {
         return userApi.getUserInfo(sessionId, userId)
     }
 
@@ -30,29 +30,50 @@ class ApiRepository {
         bio: String?,
         dateOfBirth: String?,
         newPicture: String?
-    ): Result<UserResponse> {
+    ): Result<User> {
         return userApi.updateProfile(sessionId, username, bio, dateOfBirth, newPicture)
     }
 
-    suspend fun getUserFeed(sessionId: String?, maxPostId: Int): Result<List<PostWithAuthor>>{
-        return  postApi.getUserFeed(sessionId, maxPostId)
+    // ==================== FEED ====================
+
+
+    suspend fun getFeedPostIds(sessionId: String?, maxPostId: Int): Result<List<Int>> {
+        return postApi.getFeedPostIds(sessionId, maxPostId)
     }
 
-    suspend fun getUserPosts(sessionId: String?, maxPostId: Int, authorId: Int): Result<List<PostWithAuthor>>{
-        return  postApi.gestUserPost(sessionId, maxPostId, authorId)
+
+    suspend fun getUserPostIds(sessionId: String?, authorId: Int, maxPostId: Int): Result<List<Int>> {
+        return postApi.getUserPostIds(sessionId, authorId, maxPostId)
     }
+
+    // ==================== POST ====================
+
+
+    suspend fun getPost(sessionId: String?, postId: Int): Result<Post> {
+        return postApi.getPost(sessionId, postId)
+    }
+
+    suspend fun newPost(
+        sessionId: String?,
+        contentText: String,
+        contentPicture: String,
+        location: LocationData? = null
+    ): Result<Post> {
+        return postApi.newPost(sessionId, contentText, contentPicture, location)
+    }
+
+    // ==================== FOLLOW ====================
 
     suspend fun followUser(sessionId: String?, targetUserId: Int): Result<Unit> {
-        return followApi.follow(sessionId, targetUserId)  // ← deve restituire Result<Unit>
+        return followApi.follow(sessionId, targetUserId)
     }
 
     suspend fun unfollowUser(sessionId: String?, targetUserId: Int): Result<Unit> {
-        return followApi.unfollow(sessionId, targetUserId)  // ← deve restituire Result<Unit>
+        return followApi.unfollow(sessionId, targetUserId)
     }
-    suspend fun  newPost(sessionId: String?, contentText: String, contentPicture: String, location: LocationResponse? = null
-    ): Result<PostResponse> {
-        return  postApi.newPost(sessionId, contentText, contentPicture, location)
-    }
+
+    // ==================== LIFECYCLE ====================
+
     fun close() {
         ApiClient.close()
     }
