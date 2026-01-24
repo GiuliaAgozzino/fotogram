@@ -26,7 +26,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val settingsRepository = SettingsRepository(applicationContext.userDataStore)
-        apiRepository = ApiRepository()
+        apiRepository = ApiRepository(applicationContext)
 
         val authFactory = AuthViewModelFactory(settingsRepository, apiRepository)
 
