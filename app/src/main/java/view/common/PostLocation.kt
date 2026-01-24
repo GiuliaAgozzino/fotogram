@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.mapbox.geojson.Point
-import location.LocationManager
+import utils.LocationManager
 import model.PostWithAuthor
 import view.location.RequestLocationPermission
 import  view.locationDialog.LocationViewerDialog

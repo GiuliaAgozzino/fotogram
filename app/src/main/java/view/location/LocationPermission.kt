@@ -1,6 +1,6 @@
 package view.location
 
-import location.LocationManager
+import utils.LocationManager
 import view.locationDialog.LocationPickerDialog
 import view.locationDialog.PermissionDeniedDialog
 import view.locationDialog.PermissionDeniedForeverDialog

@@ -4,8 +4,6 @@ package model
 import kotlinx.serialization.Serializable
 
 
-// REQUEST MODELS (dati da inviare al server)
-
 
 //  Aggiorna info utente
 @Serializable
@@ -81,8 +79,3 @@ data class PostWithAuthor(
 )
 
 
-    // Errore generico
-@Serializable
-data class ErrorResponse(
-    val message: String
-)

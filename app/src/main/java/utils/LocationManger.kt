@@ -1,4 +1,4 @@
-package location
+package utils
 
 import android.Manifest
 import android.content.Context
