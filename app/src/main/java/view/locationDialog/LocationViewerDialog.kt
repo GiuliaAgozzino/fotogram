@@ -138,7 +138,7 @@ fun LocationViewerDialog(
                             color = Color(0xFF2E7D32)
                         )
                         Text(
-                            text = "About ${"%.1f".format(distanceKm)} km away",
+                            text = "A circa ${"%.1f".format(distanceKm)} km",
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color(0xFF616161)
                         )
