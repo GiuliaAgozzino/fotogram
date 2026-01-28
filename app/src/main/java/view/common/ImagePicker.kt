@@ -39,7 +39,8 @@ private fun uriToBase64(context: Context, uri: Uri): String? {
     }
 }
 
-private fun compressBitmapToBase64(bitmap: Bitmap, maxSizeChars: Int): String {
+// ImagePicker.kt
+private fun compressBitmapToBase64(bitmap: Bitmap, maxSizeChars: Int): String? {
     var quality = 90
     var base64String: String
 
@@ -50,5 +51,5 @@ private fun compressBitmapToBase64(bitmap: Bitmap, maxSizeChars: Int): String {
         quality -= 5
     } while (base64String.length > maxSizeChars && quality > 10)
 
-    return base64String
+    return if (base64String.length <= maxSizeChars) base64String else null
 }

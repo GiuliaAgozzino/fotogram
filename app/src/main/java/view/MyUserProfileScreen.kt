@@ -241,8 +241,9 @@ fun EditProfileDialog(
                 LimitedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = "Nome",
-                    maxLength = 15
+                    label = "Nome utente",
+                    maxLength = 15,
+                    allowSpaces = false
                 )
 
                 LimitedTextField(

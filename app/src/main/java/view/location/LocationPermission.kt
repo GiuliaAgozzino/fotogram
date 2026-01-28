@@ -99,8 +99,8 @@ fun LocationPermission(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        CircularProgressIndicator(color = Color(0xFF7d0885))
-                        Text("Waiting for permission...")
+                        CircularProgressIndicator()
+                        Text("In attesa dei permessi...")
                     }
                 }
             }
@@ -133,8 +133,8 @@ fun LocationPermission(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            CircularProgressIndicator(color = Color(0xFF7d0885))
-                            Text("Loading position...")
+                            CircularProgressIndicator()
+                            Text("Calcolo posizione...")
                         }
                     }
                 }
