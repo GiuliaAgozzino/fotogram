@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
+import model.Post
 import model.User
 import repository.ApiRepository
 
@@ -16,7 +17,6 @@ class MyUserProfileViewModel(
     private val apiRepository: ApiRepository
 ) : ViewModel() {
 
-    // Stati UI - Info utente
     var isLoading by mutableStateOf(false)
         private set
 
@@ -26,15 +26,8 @@ class MyUserProfileViewModel(
     var userInfo by mutableStateOf<User?>(null)
         private set
 
-    // Stati UI - Modifica profilo
-    var isSaving by mutableStateOf(false)
-        private set
-
-    var showEditDialog by mutableStateOf(false)
-        private set
-
-    // Stati UI - Post (lista di ID)
-    var userPostIds by mutableStateOf<List<Int>>(emptyList())
+    // Post completi
+    var userPosts by mutableStateOf<List<Post>>(emptyList())
         private set
 
     var isLoadingPosts by mutableStateOf(false)
@@ -43,7 +36,13 @@ class MyUserProfileViewModel(
     var hasMorePosts by mutableStateOf(true)
         private set
 
-    // Paginazione
+    // Edit dialog
+    var showEditDialog by mutableStateOf(false)
+        private set
+
+    var isSaving by mutableStateOf(false)
+        private set
+
     private var currentMaxPostId: Int = 0
     private val pageSize = 10
 
@@ -51,7 +50,7 @@ class MyUserProfileViewModel(
         loadUserInfo()
     }
 
-    fun loadUserInfo() {
+    fun loadUserInfo(forceRefresh: Boolean = false) {
         if (userId == null) return
 
         viewModelScope.launch {
@@ -59,19 +58,18 @@ class MyUserProfileViewModel(
             showError = false
 
             try {
-                val result = apiRepository.getUserInfo(sessionId, userId)
+                val result = apiRepository.getUserInfo(sessionId, userId, forceRefresh)
 
                 if (result.isSuccess) {
                     userInfo = result.getOrNull()
-                    Log.d("MyUserProfileViewModel", "Dati utente caricati: ${userInfo?.username}")
-                    loadMorePosts()
+                    if (!forceRefresh) {
+                        loadMorePosts()
+                    }
                 } else {
                     showError = true
-                    Log.e("MyUserProfileViewModel", "Errore recupero dati", result.exceptionOrNull())
                 }
             } catch (e: Exception) {
                 showError = true
-                Log.e("MyUserProfileViewModel", "Eccezione", e)
             } finally {
                 isLoading = false
             }
@@ -89,89 +87,65 @@ class MyUserProfileViewModel(
 
                 if (result.isSuccess) {
                     val newIds = result.getOrNull() ?: emptyList()
-                    Log.d("MyUserProfileViewModel", "Ricevuti ${newIds.size} post IDs")
 
-                    when {
-                        newIds.isEmpty() -> {
-                            hasMorePosts = false
+                    if (newIds.isEmpty()) {
+                        hasMorePosts = false
+                    } else {
+                        val newPosts = newIds.mapNotNull { postId ->
+                            apiRepository.getPost(sessionId, postId).getOrNull()
                         }
-                        newIds.size < pageSize -> {
-                            userPostIds = userPostIds + newIds
+
+                        userPosts = userPosts + newPosts
+
+                        if (newIds.size < pageSize) {
                             hasMorePosts = false
-                        }
-                        else -> {
-                            userPostIds = userPostIds + newIds
+                        } else {
                             currentMaxPostId = newIds.last() - 1
-                            if (currentMaxPostId <= 0) {
-                                hasMorePosts = false
-                            }
+                            if (currentMaxPostId <= 0) hasMorePosts = false
                         }
                     }
                 } else {
                     showError = true
-                    Log.e("MyUserProfileViewModel", "Errore caricamento post", result.exceptionOrNull())
                 }
             } catch (e: Exception) {
                 showError = true
-                Log.e("MyUserProfileViewModel", "Eccezione", e)
             } finally {
                 isLoadingPosts = false
             }
         }
     }
 
-    fun updateProfile(
-        newName: String,
-        newBio: String,
-        newDateOfBirth: String,
-        newPicture: String? = null
-    ) {
+    fun updateProfile(name: String, bio: String, dateOfBirth: String, newPicture: String?) {
         viewModelScope.launch {
             isSaving = true
-            showError = false
 
             try {
-                val result = apiRepository.updateProfile(
-                    sessionId = sessionId,
-                    username = newName,
-                    bio = newBio,
-                    dateOfBirth = newDateOfBirth,
-                    newPicture = newPicture
-                )
+                val result = apiRepository.updateProfile(sessionId, name, bio, dateOfBirth, newPicture)
 
                 if (result.isSuccess) {
                     userInfo = result.getOrNull()
-                    closeEditDialog()
-                    Log.d("MyUserProfileViewModel", "Profilo aggiornato")
+                    showEditDialog = false
                 } else {
                     showError = true
-                    Log.e("MyUserProfileViewModel", "Errore aggiornamento", result.exceptionOrNull())
                 }
             } catch (e: Exception) {
                 showError = true
-                Log.e("MyUserProfileViewModel", "Eccezione", e)
             } finally {
                 isSaving = false
             }
         }
     }
 
-    fun openEditDialog() {
-        showEditDialog = true
-    }
+    fun openEditDialog() { showEditDialog = true }
+    fun closeEditDialog() { showEditDialog = false }
+    fun clearError() { showError = false }
 
-    fun closeEditDialog() {
-        showEditDialog = false
-    }
 
-    fun clearError() {
-        showError = false
-    }
 
     fun refresh() {
-        userPostIds = emptyList()
+        userPosts = emptyList()
         currentMaxPostId = 0
         hasMorePosts = true
-        loadUserInfo()
+        loadUserInfo(forceRefresh = true)
     }
 }

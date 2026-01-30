@@ -14,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import model.User
 import view.common.*
-import viewModel.DataViewModel
 import viewModel.MyUserProfileViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -22,13 +21,11 @@ import java.util.*
 @Composable
 fun MyUserProfileScreen(
     modifier: Modifier = Modifier,
-    userProfileViewModel: MyUserProfileViewModel,
-    dataViewModel: DataViewModel
+    userProfileViewModel: MyUserProfileViewModel
 ) {
     var fullscreenImage by remember { mutableStateOf<String?>(null) }
     val listState = rememberLazyListState()
 
-    // Gestione infinite scroll
     InfiniteScrollEffect(
         listState = listState,
         hasMore = userProfileViewModel.hasMorePosts,
@@ -36,7 +33,6 @@ fun MyUserProfileScreen(
         tag = "MyUserProfileScreen"
     )
 
-    // Dialogs
     CommonDialogs(
         showError = userProfileViewModel.showError,
         onDismissError = { userProfileViewModel.clearError() },
@@ -45,7 +41,6 @@ fun MyUserProfileScreen(
         onDismissFullscreen = { fullscreenImage = null }
     )
 
-    // Dialog di modifica profilo
     if (userProfileViewModel.showEditDialog && userProfileViewModel.userInfo != null) {
         EditProfileDialog(
             currentUser = userProfileViewModel.userInfo!!,
@@ -59,10 +54,7 @@ fun MyUserProfileScreen(
 
     when {
         userProfileViewModel.isLoading && userProfileViewModel.userInfo == null -> {
-            Box(
-                modifier = modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
+            Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 LoadingIndicator()
             }
         }
@@ -83,13 +75,15 @@ fun MyUserProfileScreen(
                 }
 
                 items(
-                    items = userProfileViewModel.userPostIds,
-                    key = { it }
-                ) { postId ->
-                    ProfilePostItem(
-                        postId = postId,
-                        dataViewModel = dataViewModel,
-                        currentUserId = userProfileViewModel.userInfo?.id,
+                    items = userProfileViewModel.userPosts,
+                    key = { it.id }
+                ) { post ->
+                    PostItem(
+                        post = post,
+                        author = userProfileViewModel.userInfo!!,
+                        isOwnPost = true,
+                        isAuthorClickable = false,
+                        onAuthorClick = { },
                         onImageClick = { fullscreenImage = it }
                     )
                 }
@@ -98,7 +92,7 @@ fun MyUserProfileScreen(
                     PostListFooter(
                         isLoading = userProfileViewModel.isLoadingPosts,
                         hasMore = userProfileViewModel.hasMorePosts,
-                        isEmpty = userProfileViewModel.userPostIds.isEmpty()
+                        isEmpty = userProfileViewModel.userPosts.isEmpty()
                     )
                 }
             }
@@ -106,53 +100,6 @@ fun MyUserProfileScreen(
     }
 }
 
-/**
- * Post item per la schermata profilo (autore non cliccabile).
- */
-@Composable
-fun ProfilePostItem(
-    postId: Int,
-    dataViewModel: DataViewModel,
-    currentUserId: Int?,
-    onImageClick: (String) -> Unit
-) {
-    val post = dataViewModel.posts[postId]
-    val author = post?.let { dataViewModel.authors[it.authorId] }
-
-    LaunchedEffect(postId, post) {
-        if (post == null) {
-            dataViewModel.loadPost(postId)
-        }
-        if (post != null && author == null) {
-            dataViewModel.loadAuthor(post.authorId)
-        }
-    }
-
-    if (post == null || author == null) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .padding(8.dp)
-        ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        }
-    } else {
-        PostItem(
-            post = post,
-            author = author,
-            isOwnPost = currentUserId?.let { post.authorId == it } ?: false,
-            isAuthorClickable = false,
-            onAuthorClick = { },
-            onImageClick = onImageClick
-        )
-    }
-}
 
 @Composable
 fun PostListFooter(

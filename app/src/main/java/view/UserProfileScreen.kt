@@ -12,7 +12,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import view.common.*
-import viewModel.DataViewModel
 import viewModel.UserProfileViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -20,18 +19,16 @@ import viewModel.UserProfileViewModel
 fun UserProfileScreen(
     modifier: Modifier = Modifier,
     userProfileViewModel: UserProfileViewModel,
-    dataViewModel: DataViewModel,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onCurrentUserChanged: () -> Unit = {}
 ) {
     var fullscreenImage by remember { mutableStateOf<String?>(null) }
     val listState = rememberLazyListState()
 
-    // Carica i dati all'avvio
     LaunchedEffect(Unit) {
         userProfileViewModel.loadUserInfo()
     }
 
-    // Gestione infinite scroll
     InfiniteScrollEffect(
         listState = listState,
         hasMore = userProfileViewModel.hasMorePosts,
@@ -39,7 +36,6 @@ fun UserProfileScreen(
         tag = "UserProfileScreen"
     )
 
-    // Dialogs
     CommonDialogs(
         showError = userProfileViewModel.showError,
         onDismissError = { userProfileViewModel.clearError() },
@@ -51,15 +47,10 @@ fun UserProfileScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(userProfileViewModel.userInfo?.username ?: "Profilo utente")
-                },
+                title = { Text(userProfileViewModel.userInfo?.username ?: "Profilo utente") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Indietro"
-                        )
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro")
                     }
                 }
             )
@@ -69,9 +60,7 @@ fun UserProfileScreen(
         when {
             userProfileViewModel.isLoading && userProfileViewModel.userInfo == null -> {
                 Box(
-                    modifier = modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
+                    modifier = modifier.fillMaxSize().padding(innerPadding),
                     contentAlignment = Alignment.Center
                 ) {
                     LoadingIndicator()
@@ -80,9 +69,7 @@ fun UserProfileScreen(
             userProfileViewModel.userInfo != null -> {
                 LazyColumn(
                     state = listState,
-                    modifier = modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
+                    modifier = modifier.fillMaxSize().padding(innerPadding),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -93,17 +80,25 @@ fun UserProfileScreen(
                             showFollowButton = true,
                             isFollowing = userProfileViewModel.userInfo!!.isYourFollowing,
                             isFollowLoading = userProfileViewModel.isFollowLoading,
-                            onFollowClick = { userProfileViewModel.toggleFollow(dataViewModel) }
+                            onFollowClick = {
+                                userProfileViewModel.toggleFollow {
+                                    onCurrentUserChanged()
+                                }
+
+                            }
                         )
                     }
 
                     items(
-                        items = userProfileViewModel.userPostIds,
-                        key = { it }
-                    ) { postId ->
-                        UserProfilePostItem(
-                            postId = postId,
-                            dataViewModel = dataViewModel,
+                        items = userProfileViewModel.userPosts,
+                        key = { it.id }
+                    ) { post ->
+                        PostItem(
+                            post = post,
+                            author = userProfileViewModel.userInfo!!,
+                            isOwnPost = false,
+                            isAuthorClickable = false,
+                            onAuthorClick = { },
                             onImageClick = { fullscreenImage = it }
                         )
                     }
@@ -112,55 +107,11 @@ fun UserProfileScreen(
                         PostListFooter(
                             isLoading = userProfileViewModel.isLoadingPosts,
                             hasMore = userProfileViewModel.hasMorePosts,
-                            isEmpty = userProfileViewModel.userPostIds.isEmpty()
+                            isEmpty = userProfileViewModel.userPosts.isEmpty()
                         )
                     }
                 }
             }
         }
-    }
-}
-
-@Composable
-fun UserProfilePostItem(
-    postId: Int,
-    dataViewModel: DataViewModel,
-    onImageClick: (String) -> Unit
-) {
-    val post = dataViewModel.posts[postId]
-    val author = post?.let { dataViewModel.authors[it.authorId] }
-
-    LaunchedEffect(postId, post) {
-        if (post == null) {
-            dataViewModel.loadPost(postId)
-        }
-        if (post != null && author == null) {
-            dataViewModel.loadAuthor(post.authorId)
-        }
-    }
-
-    if (post == null || author == null) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .padding(8.dp)
-        ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        }
-    } else {
-        PostItem(
-            post = post,
-            author = author,
-            isOwnPost = false,
-            isAuthorClickable = false,
-            onAuthorClick = { },
-            onImageClick = onImageClick
-        )
     }
 }

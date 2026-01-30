@@ -25,20 +25,7 @@ class AuthViewModelFactory(
     }
 }
 
-// ==================== DATA (condiviso) ====================
 
-class DataViewModelFactory(
-    private val apiRepository: ApiRepository,
-    private val sessionId: String?
-) : ViewModelProvider.Factory {
-
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(DataViewModel::class.java)) {
-            return DataViewModel(apiRepository, sessionId) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
-    }
-}
 
 // ==================== FEED ====================
 
@@ -91,12 +78,13 @@ class MyUserProfileViewModelFactory(
 class UserProfileViewModelFactory(
     private val targetUserId: Int,
     private val sessionId: String?,
+    private val currentUserId: Int,
     private val apiRepository: ApiRepository
 ) : ViewModelProvider.Factory {
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(UserProfileViewModel::class.java)) {
-            return UserProfileViewModel(targetUserId, sessionId, apiRepository) as T
+            return UserProfileViewModel(targetUserId, sessionId, currentUserId, apiRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
     }

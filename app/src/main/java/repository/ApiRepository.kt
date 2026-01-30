@@ -33,30 +33,25 @@ class ApiRepository(context: Context) {
         return userApi.register(username, pictureBase64)
     }
 
-    suspend fun getUserInfo(sessionId: String?, userId: Int?): Result<User> {
+    suspend fun getUserInfo(sessionId: String?, userId: Int?, forceRefresh: Boolean = false): Result<User> {
         if (userId == null) {
             return Result.failure(Exception("userId è null"))
         }
 
-        //  Controllo cache locale
+        // Se forceRefresh, scarica sempre da rete
+        if (forceRefresh) {
+            return refreshUserInfo(sessionId, userId)
+        }
+
+        // Controllo cache locale
         val cachedUser = userDao.getUserById(userId)
         if (cachedUser != null) {
             Log.d("ApiRepository", "User $userId trovato in cache")
             return Result.success(cachedUser.toUser())
         }
 
-        //Non in cache
-        Log.d("ApiRepository", "User $userId non in cache, scarico da rete")
-        val result = userApi.getUserInfo(sessionId, userId)
-
-        // salvo in cache
-        if (result.isSuccess) {
-            val user = result.getOrNull()!!
-            userDao.insertUser(user.toEntity())
-            Log.d("ApiRepository", "User $userId salvato in cache")
-        }
-
-        return result
+        // Non in cache
+        return refreshUserInfo(sessionId, userId)
     }
 
 

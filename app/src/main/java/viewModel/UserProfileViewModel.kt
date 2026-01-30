@@ -7,16 +7,17 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
+import model.Post
 import model.User
 import repository.ApiRepository
 
 class UserProfileViewModel(
     private val targetUserId: Int?,
     private val sessionId: String?,
+    private val userId: Int?,  // <-- AGGIUNGI: l'utente corrente
     private val apiRepository: ApiRepository
 ) : ViewModel() {
 
-    // Stati UI - Info utente
     var isLoading by mutableStateOf(false)
         private set
 
@@ -26,15 +27,13 @@ class UserProfileViewModel(
     var userInfo by mutableStateOf<User?>(null)
         private set
 
-    // Stati UI - Follow
     var isFollowLoading by mutableStateOf(false)
         private set
 
     var followChanged by mutableStateOf(false)
         private set
 
-    // Stati UI - Post (lista di ID)
-    var userPostIds by mutableStateOf<List<Int>>(emptyList())
+    var userPosts by mutableStateOf<List<Post>>(emptyList())
         private set
 
     var isLoadingPosts by mutableStateOf(false)
@@ -43,11 +42,10 @@ class UserProfileViewModel(
     var hasMorePosts by mutableStateOf(true)
         private set
 
-    // Paginazione
     private var currentMaxPostId: Int = 0
     private val pageSize = 10
 
-    fun loadUserInfo() {
+    fun loadUserInfo(forceRefresh: Boolean = false) {
         if (targetUserId == null) return
 
         viewModelScope.launch {
@@ -55,24 +53,24 @@ class UserProfileViewModel(
             showError = false
 
             try {
-                val result = apiRepository.getUserInfo(sessionId, targetUserId)
+                val result = apiRepository.getUserInfo(sessionId, targetUserId, forceRefresh)
 
                 if (result.isSuccess) {
                     userInfo = result.getOrNull()
-                    Log.d("UserProfileViewModel", "Dati utente caricati: ${userInfo?.username}")
-                    loadMorePosts()
+                    if (!forceRefresh) {
+                        loadMorePosts()
+                    }
                 } else {
                     showError = true
-                    Log.e("UserProfileViewModel", "Errore recupero dati", result.exceptionOrNull())
                 }
             } catch (e: Exception) {
                 showError = true
-                Log.e("UserProfileViewModel", "Eccezione", e)
             } finally {
                 isLoading = false
             }
         }
     }
+
 
     fun loadMorePosts() {
         if (targetUserId == null || isLoadingPosts || !hasMorePosts) return
@@ -85,38 +83,35 @@ class UserProfileViewModel(
 
                 if (result.isSuccess) {
                     val newIds = result.getOrNull() ?: emptyList()
-                    Log.d("UserProfileViewModel", "Ricevuti ${newIds.size} post IDs")
 
-                    when {
-                        newIds.isEmpty() -> {
-                            hasMorePosts = false
+                    if (newIds.isEmpty()) {
+                        hasMorePosts = false
+                    } else {
+                        val newPosts = newIds.mapNotNull { postId ->
+                            apiRepository.getPost(sessionId, postId).getOrNull()
                         }
-                        newIds.size < pageSize -> {
-                            userPostIds = userPostIds + newIds
+
+                        userPosts = userPosts + newPosts
+
+                        if (newIds.size < pageSize) {
                             hasMorePosts = false
-                        }
-                        else -> {
-                            userPostIds = userPostIds + newIds
+                        } else {
                             currentMaxPostId = newIds.last() - 1
-                            if (currentMaxPostId <= 0) {
-                                hasMorePosts = false
-                            }
+                            if (currentMaxPostId <= 0) hasMorePosts = false
                         }
                     }
                 } else {
                     showError = true
-                    Log.e("UserProfileViewModel", "Errore caricamento post", result.exceptionOrNull())
                 }
             } catch (e: Exception) {
                 showError = true
-                Log.e("UserProfileViewModel", "Eccezione", e)
             } finally {
                 isLoadingPosts = false
             }
         }
     }
 
-    fun toggleFollow(dataViewModel: DataViewModel) {
+    fun toggleFollow(onCurrentUserChanged: () -> Unit) {  // <-- Senza User
         if (targetUserId == null || isFollowLoading) return
 
         val currentlyFollowing = userInfo?.isYourFollowing ?: false
@@ -125,49 +120,41 @@ class UserProfileViewModel(
             isFollowLoading = true
 
             try {
-                val result: Result<Unit> = if (currentlyFollowing) {
-                    apiRepository.unfollowUser(sessionId, targetUserId)
+                val result = if (currentlyFollowing) {
+                    apiRepository.unfollowUser(sessionId,  targetUserId)
                 } else {
-                    apiRepository.followUser(sessionId, targetUserId)
+                    apiRepository.followUser(sessionId,  targetUserId)
                 }
 
                 result.onSuccess {
-                    // Aggiorna userInfo locale
-                    userInfo = userInfo?.copy(
-                        isYourFollowing = !currentlyFollowing,
-                        followersCount = (userInfo?.followersCount ?: 0) + if (currentlyFollowing) -1 else 1
-                    )
+                    // Ricarica target user dalla cache aggiornata
+                    val refreshedTarget = apiRepository.getUserInfo(sessionId, targetUserId)
+                    refreshedTarget.onSuccess { user ->
+                        userInfo = user
+                    }
 
-                    // Aggiorna anche nel DataViewModel condiviso (Single Source of Truth)
-                    dataViewModel.updateFollowingStatus(targetUserId, !currentlyFollowing)
+                    // Notifica che l'utente corrente è cambiato
+                    onCurrentUserChanged()
 
                     followChanged = true
-                    Log.d("UserProfileViewModel", "Follow toggle: ora following = ${!currentlyFollowing}")
-                }.onFailure { exception ->
+                }.onFailure {
                     showError = true
-                    Log.e("UserProfileViewModel", "Errore follow/unfollow", exception)
                 }
             } catch (e: Exception) {
                 showError = true
-                Log.e("UserProfileViewModel", "Eccezione follow/unfollow", e)
             } finally {
                 isFollowLoading = false
             }
         }
     }
 
-    fun clearError() {
-        showError = false
-    }
-
-    fun resetFollowChanged() {
-        followChanged = false
-    }
+    fun clearError() { showError = false }
+    fun resetFollowChanged() { followChanged = false }
 
     fun refresh() {
-        userPostIds = emptyList()
+        userPosts = emptyList()
         currentMaxPostId = 0
         hasMorePosts = true
-        loadUserInfo()
+        loadUserInfo(forceRefresh = true)
     }
 }

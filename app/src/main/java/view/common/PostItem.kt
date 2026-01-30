@@ -23,10 +23,7 @@ import androidx.compose.ui.unit.dp
 import model.Post
 import model.User
 
-/**
- * Componente per mostrare un singolo post.
- * Riceve Post e User come parametri separati (approccio V2).
- */
+
 @Composable
 fun PostItem(
     post: Post,

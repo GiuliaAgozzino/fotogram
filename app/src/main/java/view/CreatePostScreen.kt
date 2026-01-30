@@ -19,26 +19,22 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import model.LocationData
-
 import view.common.LimitedTextField
 import view.common.rememberImagePicker
 import view.common.ErrorDialog
 import view.location.LocationPermission
 import viewModel.CreatePostViewModel
-import viewModel.DataViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreatePostScreen(
     createPostViewModel: CreatePostViewModel,
-    dataViewModel: DataViewModel,
     modifier: Modifier = Modifier,
     onBackToFeed: () -> Unit,
     onPostCreated: () -> Unit = {}
 ) {
     var contentText by remember { mutableStateOf("") }
     var contentPicture by remember { mutableStateOf<String?>(null) }
-
     var postLocation by remember { mutableStateOf<LocationData?>(null) }
     var showLocationPicker by remember { mutableStateOf(false) }
 
@@ -52,17 +48,12 @@ fun CreatePostScreen(
     // Torna al feed quando il post è creato
     LaunchedEffect(createPostViewModel.postCreated) {
         if (createPostViewModel.postCreated) {
-            // Aggiungi il post al DataViewModel
-            createPostViewModel.createdPost?.let { post ->
-                dataViewModel.addPost(post)
-            }
             createPostViewModel.resetPostCreated()
             onPostCreated()
             onBackToFeed()
         }
     }
 
-    // Dialog errore
     if (createPostViewModel.showError) {
         ErrorDialog(
             onDismiss = { createPostViewModel.clearError() },
@@ -89,10 +80,7 @@ fun CreatePostScreen(
                 title = { Text("Nuovo Post") },
                 navigationIcon = {
                     IconButton(onClick = onBackToFeed, enabled = !isLoading) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Indietro"
-                        )
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Indietro")
                     }
                 },
                 actions = {
@@ -101,10 +89,7 @@ fun CreatePostScreen(
                         enabled = canPublish
                     ) {
                         if (isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp
-                            )
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                         } else {
                             Text("Pubblica")
                         }
@@ -120,7 +105,6 @@ fun CreatePostScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Campo testo
             LimitedTextField(
                 value = contentText,
                 onValueChange = { contentText = it },
@@ -131,7 +115,6 @@ fun CreatePostScreen(
                 maxLines = 4
             )
 
-            // Immagine
             if (contentPicture != null) {
                 Box(
                     modifier = Modifier
@@ -146,7 +129,6 @@ fun CreatePostScreen(
                         contentScale = ContentScale.Crop
                     )
                 }
-
                 TextButton(
                     onClick = { imagePicker.launch("image/*") },
                     enabled = !isLoading
@@ -182,12 +164,9 @@ fun CreatePostScreen(
                 }
             }
 
-            // Card posizione
             Card(modifier = Modifier.fillMaxWidth()) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
+                    modifier = Modifier.fillMaxWidth().padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -198,40 +177,28 @@ fun CreatePostScreen(
                         Icon(
                             imageVector = Icons.Default.LocationOn,
                             contentDescription = null,
-                            tint = if (postLocation != null)
-                                MaterialTheme.colorScheme.primary
-                            else
-                                MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = if (postLocation != null) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant
                         )
-
                         Text(
                             text = if (postLocation != null) "Posizione aggiunta" else "Nessuna posizione",
-                            color = if (postLocation != null)
-                                MaterialTheme.colorScheme.primary
-                            else
-                                MaterialTheme.colorScheme.onSurfaceVariant
+                            color = if (postLocation != null) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
                     if (postLocation != null) {
-                        IconButton(
-                            onClick = { postLocation = null },
-                            enabled = !isLoading
-                        ) {
+                        IconButton(onClick = { postLocation = null }, enabled = !isLoading) {
                             Icon(Icons.Default.Close, contentDescription = "Rimuovi posizione")
                         }
                     } else {
-                        TextButton(
-                            onClick = { showLocationPicker = true },
-                            enabled = !isLoading
-                        ) {
+                        TextButton(onClick = { showLocationPicker = true }, enabled = !isLoading) {
                             Text("Aggiungi")
                         }
                     }
                 }
             }
 
-            // Messaggio requisiti
             if (!canPublish && !isLoading) {
                 Text(
                     text = when {
@@ -259,7 +226,6 @@ fun Base64Image(
         val bytes = android.util.Base64.decode(base64, android.util.Base64.DEFAULT)
         android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
     }
-
     bitmap?.let {
         Image(
             bitmap = it.asImageBitmap(),

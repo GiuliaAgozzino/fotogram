@@ -24,18 +24,10 @@ fun MainScreen(
         mainScreenViewModel.navigateTo(AppScreen.Feed)
     }
 
-    // DataViewModel condiviso (Single Source of Truth per Post e User)
-    val dataViewModel: DataViewModel = viewModel(
-        factory = DataViewModelFactory(apiRepository, sessionId)
+    // ViewModel persistenti
+    val feedViewModel: FeedViewModel = viewModel(
+        factory = FeedViewModelFactory(sessionId, apiRepository)
     )
-
-    // Factory per i ViewModel che necessitano di sessionId
-    val feedViewModelFactory = remember(sessionId) {
-        FeedViewModelFactory(sessionId, apiRepository)
-    }
-
-    // ViewModel persistenti a livello MainScreen
-    val feedViewModel: FeedViewModel = viewModel(factory = feedViewModelFactory)
     val createPostViewModel: CreatePostViewModel = viewModel(
         factory = CreatePostViewModelFactory(sessionId, apiRepository)
     )
@@ -60,7 +52,6 @@ fun MainScreen(
                 FeedScreen(
                     modifier = Modifier.padding(innerPadding),
                     feedViewModel = feedViewModel,
-                    dataViewModel = dataViewModel,
                     currentUserId = currentUserId,
                     onNavigateToProfile = { userId ->
                         if (userId == currentUserId) {
@@ -75,7 +66,6 @@ fun MainScreen(
             is AppScreen.CreatePost -> {
                 CreatePostScreen(
                     createPostViewModel = createPostViewModel,
-                    dataViewModel = dataViewModel,
                     modifier = Modifier.padding(innerPadding),
                     onBackToFeed = { mainScreenViewModel.navigateTo(AppScreen.Feed) },
                     onPostCreated = {
@@ -88,28 +78,36 @@ fun MainScreen(
             is AppScreen.MyProfile -> {
                 MyUserProfileScreen(
                     modifier = Modifier.padding(innerPadding),
-                    userProfileViewModel = myUserProfileViewModel,
-                    dataViewModel = dataViewModel
+                    userProfileViewModel = myUserProfileViewModel
                 )
             }
 
             is AppScreen.UserProfile -> {
                 val userProfileViewModel: UserProfileViewModel = viewModel(
                     key = "user_${screen.userId}",
-                    factory = UserProfileViewModelFactory(screen.userId, sessionId, apiRepository)
+                    factory = UserProfileViewModelFactory(
+                        targetUserId = screen.userId,
+                        sessionId = sessionId,
+                        currentUserId = currentUserId,
+                        apiRepository = apiRepository
+                    )
                 )
 
                 UserProfileScreen(
                     modifier = Modifier.padding(innerPadding),
                     userProfileViewModel = userProfileViewModel,
-                    dataViewModel = dataViewModel,
                     onBackClick = {
                         if (userProfileViewModel.followChanged) {
                             feedViewModel.refresh()
+                            myUserProfileViewModel.refresh()
                             userProfileViewModel.resetFollowChanged()
                         }
                         mainScreenViewModel.navigateTo(AppScreen.Feed)
+                    },
+                    onCurrentUserChanged = {
+                        myUserProfileViewModel.refresh()
                     }
+
                 )
             }
         }
