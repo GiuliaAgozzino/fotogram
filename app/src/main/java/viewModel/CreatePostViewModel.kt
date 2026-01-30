@@ -25,7 +25,6 @@ class CreatePostViewModel(
     var postCreated by mutableStateOf(false)
         private set
 
-    // Post appena creato (per aggiungerlo al DataViewModel)
     var createdPost by mutableStateOf<Post?>(null)
         private set
 

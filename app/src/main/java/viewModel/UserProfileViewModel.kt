@@ -14,7 +14,7 @@ import repository.ApiRepository
 class UserProfileViewModel(
     private val targetUserId: Int?,
     private val sessionId: String?,
-    private val userId: Int?,  // <-- AGGIUNGI: l'utente corrente
+    private val userId: Int?,
     private val apiRepository: ApiRepository
 ) : ViewModel() {
 
@@ -127,13 +127,12 @@ class UserProfileViewModel(
                 }
 
                 result.onSuccess {
-                    // Ricarica target user dalla cache aggiornata
+
                     val refreshedTarget = apiRepository.getUserInfo(sessionId, targetUserId)
                     refreshedTarget.onSuccess { user ->
                         userInfo = user
                     }
 
-                    // Notifica che l'utente corrente è cambiato
                     onCurrentUserChanged()
 
                     followChanged = true

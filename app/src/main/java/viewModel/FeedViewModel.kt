@@ -21,7 +21,6 @@ class FeedViewModel(
     private val apiRepository: ApiRepository
 ) : ViewModel() {
 
-    // Lista dei post completi (post + autore)
     var feedPosts by mutableStateOf<List<FeedPost>>(emptyList())
         private set
 
