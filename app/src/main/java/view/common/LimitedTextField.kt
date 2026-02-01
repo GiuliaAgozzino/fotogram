@@ -15,16 +15,24 @@ fun LimitedTextField(
     maxLength: Int,
     enabled: Boolean = true,
     singleLine: Boolean = true,
-    maxLines: Int = 1
+    maxLines: Int = 1,
+    allowSpaces: Boolean = true
 ) {
     OutlinedTextField(
         value = value,
-        onValueChange = { if (it.length <= maxLength) onValueChange(it) },
+        onValueChange = { newValue ->
+            val filtered = if (allowSpaces) newValue else newValue.replace(" ", "")
+            if (filtered.length <= maxLength) {
+                onValueChange(filtered)
+            }
+        },
+
         label = { Text(label) },
         supportingText = { Text("${value.length}/$maxLength") },
         modifier = Modifier.fillMaxWidth(),
         enabled = enabled,
         singleLine = singleLine,
         maxLines = maxLines
+
     )
 }

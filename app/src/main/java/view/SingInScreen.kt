@@ -67,7 +67,8 @@ fun SignInScreen(
             onValueChange = { name = it },
             label = "Nome utente",
             maxLength = 15,
-            enabled = !viewModel.isLoading
+            enabled = !viewModel.isLoading,
+            allowSpaces = false
         )
 
         Spacer(modifier = Modifier.height(16.dp))
