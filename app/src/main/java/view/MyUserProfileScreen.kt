@@ -224,6 +224,27 @@ fun EditProfileDialog(
                 Text("Annulla")
             }
         }
+
+        /* Altenativa
+         IconButton(
+                        onClick = {
+                            if (text.isNotBlank()) {
+                                chiamo on Save
+                                text = ""  pulisco
+                            }
+                        },
+                        enabled = text.isNotBlank()
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.Send,
+                            contentDescription = "Invia",
+                            tint = if (text.isNotBlank())
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+         */
     )
 }
 

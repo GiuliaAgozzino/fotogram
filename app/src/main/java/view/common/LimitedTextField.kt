@@ -16,7 +16,8 @@ fun LimitedTextField(
     enabled: Boolean = true,
     singleLine: Boolean = true,
     maxLines: Int = 1,
-    allowSpaces: Boolean = true
+    allowSpaces: Boolean = true,
+    placeholder: String = ""
 ) {
     OutlinedTextField(
         value = value,
@@ -32,7 +33,8 @@ fun LimitedTextField(
         modifier = Modifier.fillMaxWidth(),
         enabled = enabled,
         singleLine = singleLine,
-        maxLines = maxLines
+        maxLines = maxLines,
+        placeholder = {Text(placeholder)}
 
     )
 }
