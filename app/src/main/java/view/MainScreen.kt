@@ -159,6 +159,8 @@ fun MainScreen(
                 )
             )
         }
+
+        e poi onLocationClick: (locationData) -> Unit
              */
         }
     }
