@@ -12,7 +12,7 @@ import repository.ApiRepository
 import view.locationDialog.MapScreen
 import viewModel.*
 import viewModel.AppScreen.Feed
-
+import com.mapbox.geojson.Point
 @Composable
 fun MainScreen(
     currentUserId: Int,
