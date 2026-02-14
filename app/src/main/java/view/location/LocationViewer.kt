@@ -21,6 +21,7 @@ fun LocationViewer(
     postLocation: Point,
     userLocation: Point?=null,
     isNear: Boolean,
+    markerLabel: String? = null,
     modifier: Modifier = Modifier
 ) {
     val mapViewportState = rememberMapViewportState {
@@ -54,13 +55,16 @@ fun LocationViewer(
                 iconImage = postMarker
                 iconSize = 0.25
 
-               /* textField = if(user.isNullOrBlank()) "Utente sconosciuto" else  user
-                textSize = 14.0
-                textColor = Color.Blue
-                textHaloColor = Color.White
-                textHaloWidth = 2.0
-                textOffset = listOf(0.0, -2.0)
-                textAnchor = TextAnchor.BOTTOM */
+                // Mostra il label se presente
+                if (!markerLabel.isNullOrBlank()) {
+                    textField = markerLabel
+                    textSize = 14.0
+                    textColor = Color.Blue
+                    textHaloColor = Color.White
+                    textHaloWidth = 2.0
+                    textOffset = listOf(0.0, -2.0)
+                    textAnchor = TextAnchor.BOTTOM
+                }
             }
 
             // Marker dell’utente (solo se vicino)

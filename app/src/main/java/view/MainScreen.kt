@@ -9,7 +9,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import repository.ApiRepository
+import view.locationDialog.MapScreen
 import viewModel.*
+import viewModel.AppScreen.Feed
 
 @Composable
 fun MainScreen(
@@ -110,6 +112,54 @@ fun MainScreen(
 
                 )
             }
+            //Screen per aprire una mappa, in una nuova schemarta, a cui passi un point generico
+            is AppScreen.Location -> {
+                MapScreen(
+                    targetLocation = screen.point,
+                    targetLabel = screen.label,
+                    markerLabel = screen.markerLabel,
+                    maxDistanceKm = screen.maxDistanceKm,
+                    showDistanceInfo = screen.showDistanceInfo,
+                    onDismiss = { mainScreenViewModel.navigateTo(Feed) }
+                )
+            }
+
+            //esempio di utilizzo generico
+            /*
+            data class LocationData(
+                 val latitude: Double,
+                 val longitude: Double,
+                 val label: String? = null
+            )
+
+            ricodo di controllare  if (post.location?.latitude != null && post.location.longitude != null)
+            prima di usare LocationData
+             onClick = {
+                  if (generic.location?.latitude != null && generic.location.longitude != null) {
+                     val locationData = LocationData(
+                         latitude = generic.location.latitude,
+                         longitude = generic.location.longitude,
+                         label = "Mario Rossi"
+                       )
+              onLocationClick(locationData)
+            }
+         }
+
+           onLocationClick = { locationData ->
+            mainScreenViewModel.navigateTo(
+                AppScreen.Location(
+                    point = Point.fromLngLat(
+                        locationData.longitude,
+                        locationData.latitude
+                    ),
+                    label = "Posizione  ${locationData.label ?: ""}",
+                    markerLabel = locationData.label,
+                    maxDistanceKm = 5.0,
+                    showDistanceInfo = true
+                )
+            )
+        }
+             */
         }
     }
 }
