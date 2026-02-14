@@ -89,9 +89,7 @@ fun PostItem(
             PostImage(
                 base64 = post.contentPicture,
                 onClick = { onImageClick(post.contentPicture) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp)
+                modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -149,13 +147,17 @@ fun PostImage(
             Image(
                 bitmap = bitmap.asImageBitmap(),
                 contentDescription = "Immagine post",
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 600.dp)
+                    .clip(RoundedCornerShape(8.dp)),
                 contentScale = ContentScale.Crop
             )
         } else {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.padding(48.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.BrokenImage,
@@ -172,3 +174,4 @@ fun PostImage(
         }
     }
 }
+

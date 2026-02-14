@@ -20,9 +20,7 @@ class PostApi {
     private val client = ApiClient.httpClient
     private val baseUrl = ApiClient.BASE_URL
 
-    /**
-     * Ottiene la lista degli ID dei post per il feed.
-     */
+
     suspend fun getFeedPostIds(sessionId: String?, maxPostId: Int): Result<List<Int>> {
         return try {
             Log.d("PostApi", "Caricamento feed: maxPostId=$maxPostId")
@@ -48,9 +46,7 @@ class PostApi {
         }
     }
 
-    /**
-     * Ottiene la lista degli ID dei post di un utente specifico.
-     */
+
     suspend fun getUserPostIds(sessionId: String?, authorId: Int, maxPostId: Int): Result<List<Int>> {
         return try {
             Log.d("PostApi", "Caricamento post utente: authorId=$authorId, maxPostId=$maxPostId")
@@ -76,9 +72,6 @@ class PostApi {
         }
     }
 
-    /**
-     * Ottiene i dati di un singolo post.
-     */
     suspend fun getPost(sessionId: String?, postId: Int): Result<Post> {
         return try {
             Log.d("PostApi", "Caricamento post: postId=$postId")
@@ -102,9 +95,7 @@ class PostApi {
         }
     }
 
-    /**
-     * Crea un nuovo post.
-     */
+
     suspend fun newPost(
         sessionId: String?,
         contentText: String,

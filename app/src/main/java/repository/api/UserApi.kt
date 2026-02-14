@@ -24,7 +24,7 @@ class UserApi {
     // ==================== AUTH ====================
 
     suspend fun register(username: String, pictureBase64: String): Result<CreateUserResponse> {
-        // Step 1: Crea utente
+
         val createResult = createUser()
         if (createResult.isFailure) {
             return createResult
@@ -33,13 +33,13 @@ class UserApi {
         val userInfo = createResult.getOrNull()!!
         val sessionId = userInfo.sessionId
 
-        // Step 2: Aggiorna username
+
         val updateInfoResult = updateUserInfo(sessionId, username, null, null)
         if (updateInfoResult.isFailure) {
             Log.e("UserApi", "Username non aggiornato, ma utente creato")
         }
 
-        // Step 3: Aggiorna immagine
+
         val updateImageResult = updateUserImage(sessionId, pictureBase64)
         if (updateImageResult.isFailure) {
             Log.e("UserApi", "Immagine non aggiornata, ma utente creato")

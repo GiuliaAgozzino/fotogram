@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import com.example.fotogram.R
 import com.mapbox.geojson.Point
@@ -12,6 +13,7 @@ import com.mapbox.maps.extension.compose.MapboxMap
 import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
 import com.mapbox.maps.extension.compose.annotation.generated.PointAnnotation
 import com.mapbox.maps.extension.compose.annotation.rememberIconImage
+import com.mapbox.maps.extension.style.layers.properties.generated.TextAnchor
 
 
 @Composable
@@ -51,6 +53,14 @@ fun LocationViewer(
             ) {
                 iconImage = postMarker
                 iconSize = 0.25
+
+               /* textField = if(user.isNullOrBlank()) "Utente sconosciuto" else  user
+                textSize = 14.0
+                textColor = Color.Blue
+                textHaloColor = Color.White
+                textHaloWidth = 2.0
+                textOffset = listOf(0.0, -2.0)
+                textAnchor = TextAnchor.BOTTOM */
             }
 
             // Marker dell’utente (solo se vicino)

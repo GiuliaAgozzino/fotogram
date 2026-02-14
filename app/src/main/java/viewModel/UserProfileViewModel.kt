@@ -111,7 +111,7 @@ class UserProfileViewModel(
         }
     }
 
-    fun toggleFollow(onCurrentUserChanged: () -> Unit) {  // <-- Senza User
+    fun toggleFollow(onCurrentUserChanged: () -> Unit) {
         if (targetUserId == null || isFollowLoading) return
 
         val currentlyFollowing = userInfo?.isYourFollowing ?: false

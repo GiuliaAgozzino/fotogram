@@ -42,7 +42,7 @@ class FeedViewModel(
     var firstVisibleItemScrollOffset by mutableStateOf(0)
         private set
 
-    private var currentMaxPostId: Int = 0
+    private var currentMaxPostId: Int = 10
     private val pageSize = 10
 
     init {
@@ -113,7 +113,7 @@ class FeedViewModel(
         viewModelScope.launch {
             isRefreshing = true
             feedPosts = emptyList()
-            currentMaxPostId = 0
+            currentMaxPostId = 10
             hasMorePosts = true
             loadFeed()
             isRefreshing = false
