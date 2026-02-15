@@ -8,12 +8,12 @@ plugins {
 
 android {
     namespace = "com.example.fotogram"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.fotogram"
-        minSdk = 34
-        targetSdk = 34
+        minSdk = 36
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
